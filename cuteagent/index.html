@@ -589,6 +589,57 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent" class="md-nav__link">
+    <span class="md-ellipsis">
+      WindowsAgent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WindowsAgent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent.add" class="md-nav__link">
+    <span class="md-ellipsis">
+      add()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent.hello_old_friend" class="md-nav__link">
+    <span class="md-ellipsis">
+      hello_old_friend()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent.hello_world" class="md-nav__link">
+    <span class="md-ellipsis">
+      hello_world()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -663,6 +714,57 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent" class="md-nav__link">
+    <span class="md-ellipsis">
+      WindowsAgent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WindowsAgent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent.add" class="md-nav__link">
+    <span class="md-ellipsis">
+      add()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent.hello_old_friend" class="md-nav__link">
+    <span class="md-ellipsis">
+      hello_old_friend()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.WindowsAgent.hello_world" class="md-nav__link">
+    <span class="md-ellipsis">
+      hello_world()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -695,6 +797,222 @@
 
       <p>Main module.</p>
 
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cuteagent.cuteagent.WindowsAgent" class="doc doc-heading">
+        <code>
+WindowsAgent        </code>
+
+
+
+<a href="#cuteagent.cuteagent.WindowsAgent" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">WindowsAgent</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_name</span><span class="o">=</span><span class="s2">&quot;friend&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the WindowsAgent with a configurable variable name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            variable_name (str): The name to be used by hello_old_friend.</span>
+<span class="sd">                                 Defaults to &quot;friend&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_variable_name</span> <span class="o">=</span> <span class="n">variable_name</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">hello_world</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prints a hello world message.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello World from WindowsAgent!&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">hello_old_friend</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prints a greeting to the configured variable name.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hello, my old </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config_variable_name</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds two numbers and returns the result.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.WindowsAgent.__init__" class="doc doc-heading">
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_name</span><span class="o">=</span><span class="s1">&#39;friend&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+<a href="#cuteagent.cuteagent.WindowsAgent.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Initializes the WindowsAgent with a configurable variable name.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>variable_name</code></td>
+        <td><code>str</code></td>
+        <td><p>The name to be used by hello_old_friend.
+                 Defaults to "friend".</p></td>
+        <td><code>&#39;friend&#39;</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_name</span><span class="o">=</span><span class="s2">&quot;friend&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes the WindowsAgent with a configurable variable name.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        variable_name (str): The name to be used by hello_old_friend.</span>
+<span class="sd">                             Defaults to &quot;friend&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">config_variable_name</span> <span class="o">=</span> <span class="n">variable_name</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.WindowsAgent.add" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+<a href="#cuteagent.cuteagent.WindowsAgent.add" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Adds two numbers and returns the result.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds two numbers and returns the result.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.WindowsAgent.hello_old_friend" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">hello_old_friend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
+
+
+<a href="#cuteagent.cuteagent.WindowsAgent.hello_old_friend" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Prints a greeting to the configured variable name.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">hello_old_friend</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prints a greeting to the configured variable name.&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hello, my old </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config_variable_name</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.WindowsAgent.hello_world" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">hello_world</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
+
+
+<a href="#cuteagent.cuteagent.WindowsAgent.hello_world" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Prints a hello world message.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">hello_world</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prints a hello world message.&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello World from WindowsAgent!&quot;</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
 
     </div>
 
