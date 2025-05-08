@@ -8,7 +8,7 @@
 
 
 -   Free software: MIT License
--   Documentation: <https://MasoudJB.github.io/cuteagent>
+-   Documentation: <https://FintorAI.github.io/cuteagent>
     
 
 ## Features
