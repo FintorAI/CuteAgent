@@ -12,18 +12,18 @@
 
 ## 🚀 Overview
 
-**CuteAgent** is a modular Python library designed to help developers create, manage, and orchestrate AI agents that perform computer-use tasks. It is built for seamless integration with agentic AI workflow frameworks like [LangGraph](https://github.com/langchain-ai/langgraph), making it simple to automate, extend, and build computer use workflows with human-in-the-loopß.
+**CuteAgent** is a modular Python library designed to help developers create, manage, and orchestrate AI agents that perform computer-use tasks. It is built for seamless integration with agentic AI workflow frameworks like [LangGraph](https://github.com/langchain-ai/langgraph), making it simple to automate, extend, and build computer use workflows with human-in-the-loop.
 
 **Key Features:**
 - 🧩 **Modular Agent Design**: Compose agents with pluggable tools for web, application, and system automation.
 - 🔗 **Agentic Workflow Integration**: Native compatibility with frameworks like LangGraph.
 - 🔐 **Secure Configuration**: Manage API keys, URLs, and secrets using Pydantic settings.
 - 👩‍💻 **Human-in-the-Loop Support**: (Coming soon) Easily add human validation or intervention steps.
-- 📦 **Modern Python Packaging**: PEP8-compliant, type-hinted, and ready for PyPI.
-
+- 📦 **Modern Python Packaging**: PEP8-compliant, type-hinted.
+<!-- 
 ---
 
-## 📦 Installation
+## 📦 Installation -->
 
 
 
