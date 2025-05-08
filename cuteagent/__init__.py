@@ -2,7 +2,7 @@
 
 __author__ = """Masoud Jb"""
 __email__ = "eng@fintor.com"
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 from .cuteagent import WindowsAgent
 
