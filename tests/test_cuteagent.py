@@ -40,6 +40,12 @@ class TestWindowsAgent(unittest.TestCase):
         agent.hello_world()
         self.assertEqual(self.captured_output.getvalue().strip(), "Hello World from WindowsAgent!")
 
+    def test_act_method(self):
+        """Test the act method."""
+        agent = WindowsAgent()
+        result = agent.act({"action": "CLICK","coordinate": [50,200], "value": "value", "model_selected": "claude"})
+        print(result)
+
     def test_add_method(self):
         """Test the add method."""
         agent = WindowsAgent()

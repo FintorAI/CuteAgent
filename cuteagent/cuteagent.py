@@ -11,6 +11,7 @@ class WindowsAgent:
                                  Defaults to "friend".
         """
         self.config_variable_name = variable_name
+        self.os_url = os_url
 
     def hello_world(self):
         """Prints a hello world message."""
