@@ -933,6 +933,7 @@ WindowsAgent        </code>
                 <span class="n">api_name</span><span class="o">=</span><span class="s2">&quot;/get_screenshot_url&quot;</span>
             <span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in act operation: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">result</span>
@@ -946,6 +947,7 @@ WindowsAgent        </code>
                 <span class="n">api_name</span><span class="o">=</span><span class="s2">&quot;/get_cropped_screenshot&quot;</span>
             <span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in act operation: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">result</span>
