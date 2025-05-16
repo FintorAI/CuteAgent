@@ -1,5 +1,6 @@
 """Main module."""
 from gradio_client import Client
+import time
 # https://working-tuna-massive.ngrok-free.app
 # https://upright-mantis-intensely.ngrok-free.app/
 # https://working-tuna-massive.ngrok-free.app/
@@ -42,7 +43,35 @@ class WindowsAgent:
         except Exception as e:
             print(f"Error in act operation: {e}")
             return None
+
+    def click_element(self, x: int, y: int):
+        """Click at the specified coordinates.
         
+        Args:
+            x (int): X coordinate
+            y (int): Y coordinate
+        """
+        try:
+            if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+                raise ValueError("Coordinates must be numbers")
+                
+            input_data = {
+                "action": "CLICK",
+                "coordinate": [int(x), int(y)],
+                "value": "value",
+                "model_selected": "claude"
+            }
+            
+            client = Client(self.os_url)
+            result = client.predict(
+                user_input=str(input_data),
+                api_name="/process_input1"
+            )
+            print(result)
+            return result
+        except Exception as e:
+            print(f"Error in click operation: {e}")
+            return None
 
     def screenshot(self):
         try:
@@ -67,3 +96,19 @@ class WindowsAgent:
         except Exception as e:
             print(f"Error in act operation: {e}")
             return result
+
+    def pause(self, seconds: float):
+        """Pauses execution for the specified number of seconds.
+        
+        Args:
+            seconds (float): Number of seconds to pause
+        """
+        try:
+            if not isinstance(seconds, (int, float)) or seconds < 0:
+                raise ValueError("Seconds must be a non-negative number")
+                
+            time.sleep(seconds)
+            return True
+        except Exception as e:
+            print(f"Error in pause operation: {e}")
+            return False

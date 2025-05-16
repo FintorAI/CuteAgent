@@ -109,7 +109,11 @@ if __name__ == '__main__':
 
     try:
         agent = WindowsAgent(os_url=OS_URL)
-        result = agent.screenshot_cropped([50,100,150,200])
+        result = agent.click_element(150,200)
+        agent.pause(1)
+        result2 = agent.click_element(200,200)
+        agent.pause(1)
+        result3 = agent.click_element(250,200)
         print("Come on man")
     except Exception as e:
         print(f"Error running test suite: {e}")
