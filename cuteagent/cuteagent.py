@@ -1,8 +1,14 @@
 """Main module."""
 from gradio_client import Client
+# https://working-tuna-massive.ngrok-free.app
+# https://upright-mantis-intensely.ngrok-free.app/
+# https://working-tuna-massive.ngrok-free.app/
+
+OS_URL = "https://fintor-cute-test-1.ngrok.app"
+
 
 class WindowsAgent:
-    def __init__(self, variable_name="friend" , os_url="https://upright-mantis-intensely.ngrok-free.app"):
+    def __init__(self, variable_name="friend" , os_url=OS_URL):
         """
         Initializes the WindowsAgent with a configurable variable name.
 
@@ -34,5 +40,30 @@ class WindowsAgent:
             )
             print(result)
         except Exception as e:
-            print(f"Error in ootb_integration: {e}")
+            print(f"Error in act operation: {e}")
             return None
+        
+
+    def screenshot(self):
+        try:
+            client = Client(self.os_url) 
+            result = client.predict(
+                api_name="/get_screenshot_url"
+            )
+            print(result)
+        except Exception as e:
+            print(f"Error in act operation: {e}")
+            return result
+        
+
+    def screenshot_cropped(self, arr_input):
+        try:
+            client = Client(self.os_url) 
+            result = client.predict(
+                array_input=arr_input,
+                api_name="/get_cropped_screenshot"
+            )
+            print(result)
+        except Exception as e:
+            print(f"Error in act operation: {e}")
+            return result

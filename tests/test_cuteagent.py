@@ -6,9 +6,28 @@
 import unittest
 from io import StringIO
 import sys
+import logging
 from cuteagent import WindowsAgent
+from gradio_client import Client
 
 
+# Set up logging to file
+logging.basicConfig(filename='test_debug.log', level=logging.DEBUG, 
+                    format='%(asctime)s - %(message)s', filemode='w')
+
+def screenshot1(url):
+    try:
+        client = Client(url) 
+        result = client.predict(
+            api_name="/get_screenshot_url"
+        )
+        print(result)
+        print("Done")
+        return result
+    except Exception as e:
+        print(f"Error in act operation: {e}")
+        return result
+        
 class TestWindowsAgent(unittest.TestCase):
     """Tests for `cuteagent` package."""
 
@@ -43,8 +62,28 @@ class TestWindowsAgent(unittest.TestCase):
     def test_act_method(self):
         """Test the act method."""
         agent = WindowsAgent()
-        result = agent.act({"action": "CLICK","coordinate": [50,200], "value": "value", "model_selected": "claude"})
-        print(result)
+        result = agent.act({"action": "CLICK","coordinate": [50,100], "value": "value", "model_selected": "claude"})
+        
+        # Temporarily restore original stdout to print debug output
+        sys.stdout = self.held_stdout
+        print("DEBUG - ACT RESULT:", result)
+        # Also log to file for backup
+        logging.debug(f"ACT RESULT: {result}")
+        # Reset back to captured output
+        sys.stdout = self.captured_output
+
+    def test_screenshot_method(self):
+        """Test the screenshot method."""
+        agent = WindowsAgent()
+        result = agent.screenshot()
+        
+        # Temporarily restore original stdout to print debug output
+        sys.stdout = self.held_stdout
+        print("DEBUG - SCREENSHOT RESULT:", result)
+        # Also log to file for backup
+        logging.debug(f"SCREENSHOT RESULT: {result}")
+        # Reset back to captured output
+        sys.stdout = self.captured_output
 
     def test_add_method(self):
         """Test the add method."""
@@ -66,11 +105,21 @@ if __name__ == '__main__':
     
     # Create a TestRunner to run the tests
     runner = unittest.TextTestRunner(verbosity=2) # verbosity=2 for more detailed output
-    result = runner.run(suite)
+    OS_URL = "https://fintor-cute-test-1.ngrok.app"
 
-    if result.wasSuccessful():
-        print("\nAll Python unit tests passed successfully!")
-    else:
-        print("\nSome Python unit tests failed.")
-        # Exit with a non-zero status code to indicate failure
+    try:
+        agent = WindowsAgent(os_url=OS_URL)
+        result = agent.screenshot_cropped([50,100,150,200])
+        print("Come on man")
+    except Exception as e:
+        print(f"Error running test suite: {e}")
         sys.exit(1)
+
+    # result = runner.run(suite)
+
+    # if result.wasSuccessful():
+    #     print("\nAll Python unit tests passed successfully!")
+    # else:
+    #     print("\nSome Python unit tests failed.")
+    #     # Exit with a non-zero status code to indicate failure
+    #     sys.exit(1)
