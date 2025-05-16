@@ -80,6 +80,7 @@ class WindowsAgent:
                 api_name="/get_screenshot_url"
             )
             print(result)
+            return result
         except Exception as e:
             print(f"Error in act operation: {e}")
             return result
@@ -93,6 +94,7 @@ class WindowsAgent:
                 api_name="/get_cropped_screenshot"
             )
             print(result)
+            return result
         except Exception as e:
             print(f"Error in act operation: {e}")
             return result
