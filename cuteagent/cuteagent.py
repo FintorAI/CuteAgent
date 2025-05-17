@@ -355,3 +355,48 @@ class HumanAgent:
             print(f"Error creating human task: {e}")
             return None
 
+    def reporting(self, thread_id="1234567890", thread_state=None):
+            """
+            Creates a human task with images, instructions, and questions.
+
+            Args:
+                thread_id (str): ID for the thread. Defaults to "1234567890"
+                thread_state (dict, optional): Dictionary containing thread state information
+
+            Returns:
+                Response from the reporting API containing thread status and any updates
+            """
+            try:
+                task_data = {
+                    "type": "reporting",
+                    "thread_id": thread_id,
+                    "thread_state": thread_state
+                }
+
+                # Set up headers for the API request
+                headers = {
+                    "Content-Type": "application/json",
+                    "x-api-key": self.HITL_token
+                }
+
+                # Make the API call
+                response = requests.post(
+                    self.HITL_url,
+                    headers=headers,
+                    data=json.dumps(task_data)
+                )
+
+                # Check if the request was successful
+                response.raise_for_status()
+                
+                # Return the response from the API
+                print(f"Reporting sent to {self.HITL_url} successfully")
+                return response.json()
+                
+            except requests.exceptions.RequestException as e:
+                print(f"API request error: {e}")
+                return None
+            except Exception as e:
+                print(f"Error creating human task: {e}")
+                return None
+
