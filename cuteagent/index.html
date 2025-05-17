@@ -609,6 +609,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.HumanAgent.reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      reporting()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cuteagent.cuteagent.HumanAgent.task" class="md-nav__link">
     <span class="md-ellipsis">
       task()
@@ -812,6 +821,15 @@
   <a href="#cuteagent.cuteagent.HumanAgent.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.HumanAgent.reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      reporting()
     </span>
   </a>
   
@@ -1075,6 +1093,51 @@ HumanAgent        </code>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human task: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Creates a human task with images, instructions, and questions.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                thread_id (str): ID for the thread. Defaults to &quot;1234567890&quot;</span>
+<span class="sd">                thread_state (dict, optional): Dictionary containing thread state information</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                Response from the reporting API containing thread status and any updates</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;reporting&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
+                    <span class="s2">&quot;thread_state&quot;</span><span class="p">:</span> <span class="n">thread_state</span>
+                <span class="p">}</span>
+
+                <span class="c1"># Set up headers for the API request</span>
+                <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;x-api-key&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span>
+                <span class="p">}</span>
+
+                <span class="c1"># Make the API call</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span><span class="p">,</span>
+                    <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">task_data</span><span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Check if the request was successful</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+                <span class="c1"># Return the response from the API</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reporting sent to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span><span class="si">}</span><span class="s2"> successfully&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+            <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;API request error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human task: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div>
         </details>
 
@@ -1144,6 +1207,114 @@ HumanAgent        </code>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span> <span class="o">=</span> <span class="n">HITL_token</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span> <span class="o">=</span> <span class="n">HITL_url</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.HumanAgent.reporting" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+<a href="#cuteagent.cuteagent.HumanAgent.reporting" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a human task with images, instructions, and questions.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>thread_id</code></td>
+        <td><code>str</code></td>
+        <td><p>ID for the thread. Defaults to "1234567890"</p></td>
+        <td><code>&#39;1234567890&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>thread_state</code></td>
+        <td><code>dict</code></td>
+        <td><p>Dictionary containing thread state information</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td></td>
+      <td><p>Response from the reporting API containing thread status and any updates</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a human task with images, instructions, and questions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            thread_id (str): ID for the thread. Defaults to &quot;1234567890&quot;</span>
+<span class="sd">            thread_state (dict, optional): Dictionary containing thread state information</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Response from the reporting API containing thread status and any updates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;reporting&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
+                <span class="s2">&quot;thread_state&quot;</span><span class="p">:</span> <span class="n">thread_state</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Set up headers for the API request</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;x-api-key&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Make the API call</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">task_data</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Check if the request was successful</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+            <span class="c1"># Return the response from the API</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reporting sent to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span><span class="si">}</span><span class="s2"> successfully&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;API request error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human task: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div>
         </details>
     </div>
