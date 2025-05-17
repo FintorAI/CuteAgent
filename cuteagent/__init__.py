@@ -4,6 +4,6 @@ __author__ = """Masoud Jb"""
 __email__ = "eng@fintor.com"
 __version__ = "0.0.9"
 
-from .cuteagent import WindowsAgent
+from .cuteagent import WindowsAgent, VisionAgent, HumanAgent
 
-__all__ = ["WindowsAgent"] # Optional: to define the public API
+__all__ = ["WindowsAgent", "VisionAgent","HumanAgent"] # Optional: to define the public API

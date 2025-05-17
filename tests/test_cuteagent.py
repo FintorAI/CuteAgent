@@ -7,7 +7,7 @@ import unittest
 from io import StringIO
 import sys
 import logging
-from cuteagent import WindowsAgent
+from cuteagent import WindowsAgent, VisionAgent, HumanAgent
 from gradio_client import Client
 
 
@@ -108,12 +108,24 @@ if __name__ == '__main__':
     OS_URL = "https://fintor-cute-test-1.ngrok.app"
 
     try:
-        agent = WindowsAgent(os_url=OS_URL)
-        result = agent.click_element(150,200)
-        agent.pause(1)
-        result2 = agent.click_element(200,200)
-        agent.pause(1)
-        result3 = agent.click_element(250,200)
+        # test for windows agent
+        # agent = WindowsAgent(os_url=OS_URL)
+        # result = agent.click_element(150,200)
+        # agent.pause(1)
+        # result2 = agent.click_element(200,200)
+        # agent.pause(1)
+        # result3 = agent.click_element(250,200)
+
+        # test for vision agent
+        # agent = VisionAgent(model_selected="FINTOR_GUI")
+        # result = agent.find_element(screenshot_url="https://datacollectionfintor.s3.amazonaws.com/screenshot_20250517_180131.png", element_name="click on Reports tab on navigation bar")
+        # result = agent.find_element(screenshot_url="https://datacollectionfintor.s3.amazonaws.com/screenshot_20250517_180131.png", element_name="loan number 000067029 in the table")
+
+        # test for hitl agent
+        agent = HumanAgent()
+        result = agent.task(image_urls=["https://datacollectionfintor.s3.amazonaws.com/screenshot_20250517_180131.png"], questions=[{"Question": "Confirm list of borrowers with Document name are correct?", "Choices": ["TRUE", "FALSE"]}])
+
+        print("result", result)
         print("Come on man")
     except Exception as e:
         print(f"Error running test suite: {e}")
