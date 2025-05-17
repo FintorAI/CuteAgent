@@ -590,6 +590,72 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.HumanAgent" class="md-nav__link">
+    <span class="md-ellipsis">
+      HumanAgent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="HumanAgent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.HumanAgent.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.HumanAgent.task" class="md-nav__link">
+    <span class="md-ellipsis">
+      task()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.VisionAgent" class="md-nav__link">
+    <span class="md-ellipsis">
+      VisionAgent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="VisionAgent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.VisionAgent.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.VisionAgent.convert_coordinates" class="md-nav__link">
+    <span class="md-ellipsis">
+      convert_coordinates()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cuteagent.cuteagent.WindowsAgent" class="md-nav__link">
     <span class="md-ellipsis">
       WindowsAgent
@@ -733,6 +799,72 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.HumanAgent" class="md-nav__link">
+    <span class="md-ellipsis">
+      HumanAgent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="HumanAgent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.HumanAgent.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.HumanAgent.task" class="md-nav__link">
+    <span class="md-ellipsis">
+      task()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.VisionAgent" class="md-nav__link">
+    <span class="md-ellipsis">
+      VisionAgent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="VisionAgent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.VisionAgent.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuteagent.cuteagent.VisionAgent.convert_coordinates" class="md-nav__link">
+    <span class="md-ellipsis">
+      convert_coordinates()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cuteagent.cuteagent.WindowsAgent" class="md-nav__link">
     <span class="md-ellipsis">
       WindowsAgent
@@ -841,6 +973,680 @@
 
 
 
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cuteagent.cuteagent.HumanAgent" class="doc doc-heading">
+        <code>
+HumanAgent        </code>
+
+
+
+<a href="#cuteagent.cuteagent.HumanAgent" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">HumanAgent</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HITL_token</span><span class="o">=</span><span class="n">HITL_TOKEN</span><span class="p">,</span> <span class="n">HITL_url</span><span class="o">=</span><span class="n">HITL_URL</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the HumanAgent with token and URL.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            HITL_token (str): Authentication token</span>
+<span class="sd">            HITL_url (str): API endpoint URL</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span> <span class="o">=</span> <span class="n">HITL_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span> <span class="o">=</span> <span class="n">HITL_url</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">instruction_markdown</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">instruction_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a human task with images, instructions, and questions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image_urls (list): List of image URLs to display</span>
+<span class="sd">            instruction_markdown (str, optional): Markdown formatted instructions</span>
+<span class="sd">            instruction_url (str, optional): URL to instructions</span>
+<span class="sd">            questions (list, optional): List of question dictionaries with format:</span>
+<span class="sd">                {</span>
+<span class="sd">                    &quot;Question&quot;: &quot;Is this green?&quot;,</span>
+<span class="sd">                    &quot;Choices&quot;: [&quot;Yes&quot;, &quot;No&quot;, &quot;Maybe&quot;],  # Optional</span>
+<span class="sd">                    &quot;TypeIn&quot;: True  # Optional, defaults to True</span>
+<span class="sd">                }</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Response from the human task API</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">image_urls</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one image URL is required&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Default empty list if questions parameter is None</span>
+            <span class="k">if</span> <span class="n">questions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">questions</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="c1"># Prepare task data</span>
+            <span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;image_urls&quot;</span><span class="p">:</span> <span class="n">image_urls</span><span class="p">,</span>
+                <span class="s2">&quot;questions&quot;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
+                <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Add optional parameters if provided</span>
+            <span class="k">if</span> <span class="n">instruction_markdown</span><span class="p">:</span>
+                <span class="n">task_data</span><span class="p">[</span><span class="s2">&quot;instruction_markdown&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instruction_markdown</span>
+
+            <span class="k">if</span> <span class="n">instruction_url</span><span class="p">:</span>
+                <span class="n">task_data</span><span class="p">[</span><span class="s2">&quot;instruction_url&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instruction_url</span>
+
+            <span class="c1"># Set up headers for the API request</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;x-api-key&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Make the API call</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">task_data</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Check if the request was successful</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+            <span class="c1"># Return the response from the API</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Task sent to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span><span class="si">}</span><span class="s2"> successfully&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;API request error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human task: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.HumanAgent.__init__" class="doc doc-heading">
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HITL_token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">HITL_url</span><span class="o">=</span><span class="s1">&#39;https://51z09fq6ng.execute-api.us-west-2.amazonaws.com/dev/task&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+<a href="#cuteagent.cuteagent.HumanAgent.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Initializes the HumanAgent with token and URL.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>HITL_token</code></td>
+        <td><code>str</code></td>
+        <td><p>Authentication token</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>HITL_url</code></td>
+        <td><code>str</code></td>
+        <td><p>API endpoint URL</p></td>
+        <td><code>&#39;https://51z09fq6ng.execute-api.us-west-2.amazonaws.com/dev/task&#39;</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HITL_token</span><span class="o">=</span><span class="n">HITL_TOKEN</span><span class="p">,</span> <span class="n">HITL_url</span><span class="o">=</span><span class="n">HITL_URL</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes the HumanAgent with token and URL.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        HITL_token (str): Authentication token</span>
+<span class="sd">        HITL_url (str): API endpoint URL</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span> <span class="o">=</span> <span class="n">HITL_token</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span> <span class="o">=</span> <span class="n">HITL_url</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.HumanAgent.task" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span> <span class="n">instruction_markdown</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">instruction_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+<a href="#cuteagent.cuteagent.HumanAgent.task" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a human task with images, instructions, and questions.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>image_urls</code></td>
+        <td><code>list</code></td>
+        <td><p>List of image URLs to display</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>instruction_markdown</code></td>
+        <td><code>str</code></td>
+        <td><p>Markdown formatted instructions</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>instruction_url</code></td>
+        <td><code>str</code></td>
+        <td><p>URL to instructions</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>questions</code></td>
+        <td><code>list</code></td>
+        <td><p>List of question dictionaries with format:
+{
+    "Question": "Is this green?",
+    "Choices": ["Yes", "No", "Maybe"],  # Optional
+    "TypeIn": True  # Optional, defaults to True
+}</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td></td>
+      <td><p>Response from the human task API</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">instruction_markdown</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">instruction_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a human task with images, instructions, and questions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        image_urls (list): List of image URLs to display</span>
+<span class="sd">        instruction_markdown (str, optional): Markdown formatted instructions</span>
+<span class="sd">        instruction_url (str, optional): URL to instructions</span>
+<span class="sd">        questions (list, optional): List of question dictionaries with format:</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;Question&quot;: &quot;Is this green?&quot;,</span>
+<span class="sd">                &quot;Choices&quot;: [&quot;Yes&quot;, &quot;No&quot;, &quot;Maybe&quot;],  # Optional</span>
+<span class="sd">                &quot;TypeIn&quot;: True  # Optional, defaults to True</span>
+<span class="sd">            }</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Response from the human task API</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">image_urls</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one image URL is required&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Default empty list if questions parameter is None</span>
+        <span class="k">if</span> <span class="n">questions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">questions</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Prepare task data</span>
+        <span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;image_urls&quot;</span><span class="p">:</span> <span class="n">image_urls</span><span class="p">,</span>
+            <span class="s2">&quot;questions&quot;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
+            <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Add optional parameters if provided</span>
+        <span class="k">if</span> <span class="n">instruction_markdown</span><span class="p">:</span>
+            <span class="n">task_data</span><span class="p">[</span><span class="s2">&quot;instruction_markdown&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instruction_markdown</span>
+
+        <span class="k">if</span> <span class="n">instruction_url</span><span class="p">:</span>
+            <span class="n">task_data</span><span class="p">[</span><span class="s2">&quot;instruction_url&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instruction_url</span>
+
+        <span class="c1"># Set up headers for the API request</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;x-api-key&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Make the API call</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">task_data</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Check if the request was successful</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+        <span class="c1"># Return the response from the API</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Task sent to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span><span class="si">}</span><span class="s2"> successfully&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+    <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;API request error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human task: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cuteagent.cuteagent.VisionAgent" class="doc doc-heading">
+        <code>
+VisionAgent        </code>
+
+
+
+<a href="#cuteagent.cuteagent.VisionAgent" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">VisionAgent</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">screen_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1366</span><span class="p">,</span> <span class="mi">768</span><span class="p">),</span> <span class="n">model_selected</span><span class="o">=</span><span class="s2">&quot;FINTOR_GUI&quot;</span><span class="p">,</span> <span class="n">hf_fintor_gui_endpoint</span><span class="o">=</span><span class="n">HF_FINTOR_GUI_ENDPOINT</span><span class="p">,</span> <span class="n">hf_token</span><span class="o">=</span><span class="n">HF_TOKEN</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Vision class with a configurable variable name and OS URL.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            variable_name (str): The name to use for configuration.</span>
+<span class="sd">                                Defaults to &quot;friend&quot;.</span>
+<span class="sd">            os_url (str): The URL for OS operations.</span>
+<span class="sd">                        Defaults to OS_URL.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hf_fintor_gui_endpoint</span> <span class="o">=</span> <span class="n">hf_fintor_gui_endpoint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hf_token</span> <span class="o">=</span> <span class="n">hf_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_selected</span> <span class="o">=</span> <span class="n">model_selected</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">screen_size</span> <span class="o">=</span> <span class="n">screen_size</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screenshot_url</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_selected</span> <span class="o">!=</span> <span class="s2">&quot;FINTOR_GUI&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;We only support FINTOR_GUI for now!&quot;</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Element name in find_element&quot;</span><span class="p">,</span> <span class="n">element_name</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Screenshot url in find_element&quot;</span><span class="p">,</span> <span class="n">screenshot_url</span><span class="p">)</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span>
+                <span class="n">base_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hf_fintor_gui_endpoint</span><span class="p">,</span>   
+                <span class="n">api_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hf_token</span>
+            <span class="p">)</span>
+            <span class="n">_NAV_SYSTEM_GROUNDING</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            You are a GUI agent. You are given a task and your action history, with screenshots. You need to perform the next action to complete the task. </span>
+
+<span class="s2">            ## Output Format</span>
+<span class="s2">            ```Action: ...```</span>
+
+<span class="s2">            ## Action Space</span>
+<span class="s2">            click(start_box=&#39;&lt;|box_start|&gt;(x1,y1)&lt;|box_end|&gt;&#39;)</span>
+<span class="s2">            hotkey(key=&#39;&#39;)</span>
+<span class="s2">            type(content=&#39;&#39;) #If you want to submit your input, use </span><span class="se">\&quot;\&quot;</span><span class="s2"> at the end of `content`.</span>
+<span class="s2">            scroll(start_box=&#39;&lt;|box_start|&gt;(x1,y1)&lt;|box_end|&gt;&#39;, direction=&#39;down or up or right or left&#39;)</span>
+<span class="s2">            wait() #Sleep for 5s and take a screenshot to check for any changes.</span>
+<span class="s2">            finished()</span>
+<span class="s2">            call_user() # Submit the task and call the user when the task is unsolvable, or when you need the user&#39;s help.</span>
+
+<span class="s2">            ## Note</span>
+<span class="s2">            - Do not generate any other text.</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+
+            <span class="n">chat_completion</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="s2">&quot;tgi&quot;</span><span class="p">,</span>
+                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">_NAV_SYSTEM_GROUNDING</span><span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image_url&quot;</span><span class="p">,</span> <span class="s2">&quot;image_url&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">screenshot_url</span><span class="p">}},</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">element_name</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">],</span>
+                <span class="n">top_p</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">max_tokens</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+                <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">frequency_penalty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">presence_penalty</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="n">word_buffer</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">full_text</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">chat_completion</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">delta</span><span class="o">.</span><span class="n">content</span>
+                <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
+                    <span class="n">word_buffer</span> <span class="o">+=</span> <span class="n">chunk</span>
+                    <span class="n">words</span> <span class="o">=</span> <span class="n">word_buffer</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">full_text</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">words</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">word_buffer</span> <span class="o">=</span> <span class="n">words</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">words</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="k">if</span> <span class="n">word_buffer</span><span class="p">:</span>
+                <span class="n">full_text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">word_buffer</span><span class="p">)</span>
+
+            <span class="n">final_text</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">full_text</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;final_text&quot;</span><span class="p">,</span> <span class="n">final_text</span><span class="p">)</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\(\d+,\d+\)&quot;</span>
+
+            <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">final_text</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;matches&quot;</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">matches</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">extracted_coordinates</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="c1"># Parse the two coordinate pairs</span>
+                    <span class="n">coord1</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;()&#39;</span><span class="p">)</span>
+                    <span class="n">coord2</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;()&#39;</span><span class="p">)</span>
+                    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">coord1</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+                    <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">coord2</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+
+                    <span class="c1"># Average the coordinates</span>
+                    <span class="n">avg_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span> <span class="o">+</span> <span class="n">x2</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+                    <span class="n">avg_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">y1</span> <span class="o">+</span> <span class="n">y2</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+                    <span class="n">extracted_coordinates</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">avg_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">avg_y</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># If more than 2 matches, use the first one</span>
+                    <span class="n">extracted_coordinates</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+                <span class="n">extracted_coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_coordinates</span><span class="p">(</span><span class="n">extracted_coordinates</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">extracted_coordinates</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">extracted_coordinates</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;NOT FOUND&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in ui_tars_coordinates: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">convert_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates_str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert coordinates based on screen size ratio (screen_size/1000).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            coordinates_str (str): String in format &quot;(x,y)&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Converted coordinates in same format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Strip parentheses and split by comma</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">coordinates_str</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;()&#39;</span><span class="p">)</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">coords</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+
+            <span class="c1"># Convert coordinates based on screen ratio</span>
+            <span class="n">x_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+            <span class="n">y_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+
+            <span class="n">new_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x_ratio</span><span class="p">)</span>
+            <span class="n">new_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">y_ratio</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">new_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">new_y</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error converting coordinates: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">coordinates_str</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.VisionAgent.__init__" class="doc doc-heading">
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1366</span><span class="p">,</span> <span class="mi">768</span><span class="p">),</span> <span class="n">model_selected</span><span class="o">=</span><span class="s1">&#39;FINTOR_GUI&#39;</span><span class="p">,</span> <span class="n">hf_fintor_gui_endpoint</span><span class="o">=</span><span class="s1">&#39;https://jtpozbeohnafofam.us-east-1.aws.endpoints.huggingface.cloud/v1/&#39;</span><span class="p">,</span> <span class="n">hf_token</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+<a href="#cuteagent.cuteagent.VisionAgent.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Initializes the Vision class with a configurable variable name and OS URL.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>variable_name</code></td>
+        <td><code>str</code></td>
+        <td><p>The name to use for configuration.
+                Defaults to "friend".</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>os_url</code></td>
+        <td><code>str</code></td>
+        <td><p>The URL for OS operations.
+        Defaults to OS_URL.</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">screen_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1366</span><span class="p">,</span> <span class="mi">768</span><span class="p">),</span> <span class="n">model_selected</span><span class="o">=</span><span class="s2">&quot;FINTOR_GUI&quot;</span><span class="p">,</span> <span class="n">hf_fintor_gui_endpoint</span><span class="o">=</span><span class="n">HF_FINTOR_GUI_ENDPOINT</span><span class="p">,</span> <span class="n">hf_token</span><span class="o">=</span><span class="n">HF_TOKEN</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes the Vision class with a configurable variable name and OS URL.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        variable_name (str): The name to use for configuration.</span>
+<span class="sd">                            Defaults to &quot;friend&quot;.</span>
+<span class="sd">        os_url (str): The URL for OS operations.</span>
+<span class="sd">                    Defaults to OS_URL.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">hf_fintor_gui_endpoint</span> <span class="o">=</span> <span class="n">hf_fintor_gui_endpoint</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">hf_token</span> <span class="o">=</span> <span class="n">hf_token</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">model_selected</span> <span class="o">=</span> <span class="n">model_selected</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">screen_size</span> <span class="o">=</span> <span class="n">screen_size</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cuteagent.cuteagent.VisionAgent.convert_coordinates" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">convert_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates_str</span><span class="p">)</span></code>
+
+
+<a href="#cuteagent.cuteagent.VisionAgent.convert_coordinates" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Convert coordinates based on screen size ratio (screen_size/1000).</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>coordinates_str</code></td>
+        <td><code>str</code></td>
+        <td><p>String in format "(x,y)"</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>str</code></td>
+      <td><p>Converted coordinates in same format</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">convert_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert coordinates based on screen size ratio (screen_size/1000).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        coordinates_str (str): String in format &quot;(x,y)&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Converted coordinates in same format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Strip parentheses and split by comma</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coordinates_str</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;()&#39;</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">coords</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+
+        <span class="c1"># Convert coordinates based on screen ratio</span>
+        <span class="n">x_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+        <span class="n">y_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+
+        <span class="n">new_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x_ratio</span><span class="p">)</span>
+        <span class="n">new_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">y_ratio</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">new_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">new_y</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error converting coordinates: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">coordinates_str</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
 
 
 
