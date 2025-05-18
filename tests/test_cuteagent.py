@@ -122,15 +122,16 @@ if __name__ == '__main__':
         # result = agent.find_element(screenshot_url="https://datacollectionfintor.s3.amazonaws.com/screenshot_20250517_180131.png", element_name="loan number 000067029 in the table")
 
         # test for hitl agent
-        # HITL_TOKEN=os.getenv("HITL_TOKEN")
-        # agent = HumanAgent(HITL_token=HITL_TOKEN)
-        # result = agent.task(image_urls=["https://datacollectionfintor.s3.amazonaws.com/screenshot_20250517_180131.png"], questions=[{"Question": "Confirm list of borrowers with Document name are correct?", "Choices": ["TRUE", "FALSE"]}])
+        HITL_TOKEN=os.getenv("HITL_TOKEN")
+        print("HITL_TOKEN", HITL_TOKEN)
+        agent = HumanAgent(HITL_token=HITL_TOKEN)
+        result = agent.task(image_urls=["https://datacollectionfintor.s3.amazonaws.com/screenshot_20250517_180131.png"], thread_id="1234567890", questions=[{"Question": "Confirm list of borrowers with Document name are correct?", "Choices": ["TRUE", "FALSE"]}])
 
         # test for reporting
                 # test for hitl agent
-        HITL_TOKEN=os.getenv("HITL_TOKEN")
-        agent = HumanAgent(HITL_token=HITL_TOKEN)
-        result = agent.reporting(thread_id="1234567890", thread_state={"status": "completed"})
+        # HITL_TOKEN=os.getenv("HITL_TOKEN")
+        # agent = HumanAgent(HITL_token=HITL_TOKEN)
+        # result = agent.reporting(thread_id="1234567890", thread_state={"status": "completed"})
 
         print("result", result)
         print("Come on man")

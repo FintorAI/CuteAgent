@@ -334,7 +334,7 @@ class HumanAgent:
             # Set up headers for the API request
             headers = {
                 "Content-Type": "application/json",
-                "x-api-key": self.HITL_token
+                "Authorization": f"Bearer {self.HITL_token}"
             }
 
             # Make the API call
@@ -379,7 +379,7 @@ class HumanAgent:
                 # Set up headers for the API request
                 headers = {
                     "Content-Type": "application/json",
-                    "x-api-key": self.HITL_token
+                    "Authorization": f"Bearer {self.HITL_token}"
                 }
 
                 # Make the API call
