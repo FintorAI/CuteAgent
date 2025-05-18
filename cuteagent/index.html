@@ -1055,6 +1055,7 @@ HumanAgent        </code>
 
             <span class="c1"># Prepare task data</span>
             <span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;task&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;image_urls&quot;</span><span class="p">:</span> <span class="n">image_urls</span><span class="p">,</span>
                 <span class="s2">&quot;questions&quot;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
                 <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span>
@@ -1136,7 +1137,7 @@ HumanAgent        </code>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;API request error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="kc">None</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human task: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human reporting: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div>
         </details>
@@ -1158,7 +1159,7 @@ HumanAgent        </code>
 
 
 <h3 id="cuteagent.cuteagent.HumanAgent.__init__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HITL_token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">HITL_url</span><span class="o">=</span><span class="s1">&#39;https://51z09fq6ng.execute-api.us-west-2.amazonaws.com/dev/task&#39;</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HITL_token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">HITL_url</span><span class="o">=</span><span class="s1">&#39;https://su4matplq0.execute-api.us-west-1.amazonaws.com/prod/tasks&#39;</span><span class="p">)</span></code>
 
   <span class="doc doc-properties">
       <small class="doc doc-property doc-property-special"><code>special</code></small>
@@ -1191,7 +1192,7 @@ HumanAgent        </code>
         <td><code>HITL_url</code></td>
         <td><code>str</code></td>
         <td><p>API endpoint URL</p></td>
-        <td><code>&#39;https://51z09fq6ng.execute-api.us-west-2.amazonaws.com/dev/task&#39;</code></td>
+        <td><code>&#39;https://su4matplq0.execute-api.us-west-1.amazonaws.com/prod/tasks&#39;</code></td>
       </tr>
   </tbody>
 </table>
@@ -1313,7 +1314,7 @@ HumanAgent        </code>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;API request error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human task: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human reporting: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div>
         </details>
@@ -1424,6 +1425,7 @@ HumanAgent        </code>
 
         <span class="c1"># Prepare task data</span>
         <span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;task&quot;</span><span class="p">,</span>
             <span class="s2">&quot;image_urls&quot;</span><span class="p">:</span> <span class="n">image_urls</span><span class="p">,</span>
             <span class="s2">&quot;questions&quot;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
             <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span>
