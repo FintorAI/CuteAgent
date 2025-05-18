@@ -19,7 +19,9 @@ OS_URL = "https://fintor-cute-test-1.ngrok.app"
 HF_FINTOR_GUI_ENDPOINT = "https://jtpozbeohnafofam.us-east-1.aws.endpoints.huggingface.cloud/v1/"
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-HITL_URL = "https://51z09fq6ng.execute-api.us-west-2.amazonaws.com/dev/task"
+# HITL_URL = "https://51z09fq6ng.execute-api.us-west-2.amazonaws.com/dev/task"
+HITL_URL = "https://su4matplq0.execute-api.us-west-1.amazonaws.com/prod/tasks"
+
 HITL_TOKEN = os.environ.get("HITL_TOKEN")
 
 class WindowsAgent:
@@ -316,6 +318,7 @@ class HumanAgent:
 
             # Prepare task data
             task_data = {
+                "type": "task",
                 "image_urls": image_urls,
                 "questions": questions,
                 "thread_id": thread_id
@@ -397,6 +400,6 @@ class HumanAgent:
                 print(f"API request error: {e}")
                 return None
             except Exception as e:
-                print(f"Error creating human task: {e}")
+                print(f"Error creating human reporting: {e}")
                 return None
 
