@@ -1027,7 +1027,7 @@ HumanAgent        </code>
         <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span> <span class="o">=</span> <span class="n">HITL_token</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span> <span class="o">=</span> <span class="n">HITL_url</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s2">&quot;NotSpecified&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s2">&quot;NotSpecified&quot;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Creates a human task with images, instructions, and questions.</span>
 
@@ -1059,7 +1059,8 @@ HumanAgent        </code>
                 <span class="s2">&quot;image_urls&quot;</span><span class="p">:</span> <span class="n">image_urls</span><span class="p">,</span>
                 <span class="s2">&quot;questions&quot;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
                 <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
-                <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="n">task_type</span>
+                <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="n">task_type</span><span class="p">,</span>
+                <span class="s2">&quot;thread_state&quot;</span><span class="p">:</span> <span class="n">thread_state</span><span class="p">,</span>
             <span class="p">}</span>
 
             <span class="c1"># Set up headers for the API request</span>
@@ -1325,7 +1326,7 @@ HumanAgent        </code>
 
 
 <h3 id="cuteagent.cuteagent.HumanAgent.task" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s1">&#39;NotSpecified&#39;</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s1">&#39;NotSpecified&#39;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 
 <a href="#cuteagent.cuteagent.HumanAgent.task" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -1393,7 +1394,7 @@ HumanAgent        </code>
 </table>
         <details class="quote">
           <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
-          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s2">&quot;NotSpecified&quot;</span><span class="p">):</span>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s2">&quot;NotSpecified&quot;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates a human task with images, instructions, and questions.</span>
 
@@ -1425,7 +1426,8 @@ HumanAgent        </code>
             <span class="s2">&quot;image_urls&quot;</span><span class="p">:</span> <span class="n">image_urls</span><span class="p">,</span>
             <span class="s2">&quot;questions&quot;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
             <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
-            <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="n">task_type</span>
+            <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="n">task_type</span><span class="p">,</span>
+            <span class="s2">&quot;thread_state&quot;</span><span class="p">:</span> <span class="n">thread_state</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># Set up headers for the API request</span>
