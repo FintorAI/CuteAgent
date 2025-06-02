@@ -15,12 +15,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OS_URL = "https://fintor-cute-test-1.ngrok.app"
-# HF_UITARSE_ENDPOINT = "https://aqdw5m7aqcogopi5.us-east-1.aws.endpoints.huggingface.cloud/v1/"
 HF_FINTOR_GUI_ENDPOINT = "https://jtpozbeohnafofam.us-east-1.aws.endpoints.huggingface.cloud/v1/"
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-# HITL_URL = "https://51z09fq6ng.execute-api.us-west-2.amazonaws.com/dev/task"
-HITL_URL = "https://su4matplq0.execute-api.us-west-1.amazonaws.com/prod/tasks"
+HITL_URL = "https://d5x1qrpuf7.execute-api.us-west-1.amazonaws.com/prod/"
+
 
 HITL_TOKEN = os.environ.get("HITL_TOKEN")
 
@@ -290,7 +289,7 @@ class HumanAgent:
         self.HITL_token = HITL_token
         self.HITL_url = HITL_url
 
-    def task(self,  image_urls, thread_id="1234567890", instruction_markdown=None, instruction_url=None, questions=None):
+    def task(self,  image_urls, thread_id="1234567890", questions=None, task_type="NotSpecified"):
         """
         Creates a human task with images, instructions, and questions.
 
@@ -321,15 +320,9 @@ class HumanAgent:
                 "type": "task",
                 "image_urls": image_urls,
                 "questions": questions,
-                "thread_id": thread_id
+                "thread_id": thread_id,
+                "task_type": task_type
             }
-
-            # Add optional parameters if provided
-            if instruction_markdown:
-                task_data["instruction_markdown"] = instruction_markdown
-            
-            if instruction_url:
-                task_data["instruction_url"] = instruction_url
 
             # Set up headers for the API request
             headers = {
@@ -358,7 +351,7 @@ class HumanAgent:
             print(f"Error creating human task: {e}")
             return None
 
-    def reporting(self, thread_id="1234567890", thread_state=None):
+    def reporting(self, thread_id="1234567890", report_type="NotSpecified", thread_state=None):
             """
             Creates a human task with images, instructions, and questions.
 
@@ -373,7 +366,8 @@ class HumanAgent:
                 task_data = {
                     "type": "reporting",
                     "thread_id": thread_id,
-                    "thread_state": thread_state
+                    "thread_state": thread_state,
+                    "report_type": report_type
                 }
 
                 # Set up headers for the API request
