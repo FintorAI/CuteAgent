@@ -315,6 +315,7 @@ class HumanAgent:
             if questions is None:
                 questions = []
 
+
             # Prepare task data
             task_data = {
                 "type": "task",
