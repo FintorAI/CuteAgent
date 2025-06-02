@@ -1027,7 +1027,7 @@ HumanAgent        </code>
         <span class="bp">self</span><span class="o">.</span><span class="n">HITL_token</span> <span class="o">=</span> <span class="n">HITL_token</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">HITL_url</span> <span class="o">=</span> <span class="n">HITL_url</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">instruction_markdown</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">instruction_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s2">&quot;NotSpecified&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Creates a human task with images, instructions, and questions.</span>
 
@@ -1058,15 +1058,9 @@ HumanAgent        </code>
                 <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;task&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;image_urls&quot;</span><span class="p">:</span> <span class="n">image_urls</span><span class="p">,</span>
                 <span class="s2">&quot;questions&quot;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
-                <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span>
+                <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
+                <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="n">task_type</span>
             <span class="p">}</span>
-
-            <span class="c1"># Add optional parameters if provided</span>
-            <span class="k">if</span> <span class="n">instruction_markdown</span><span class="p">:</span>
-                <span class="n">task_data</span><span class="p">[</span><span class="s2">&quot;instruction_markdown&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instruction_markdown</span>
-
-            <span class="k">if</span> <span class="n">instruction_url</span><span class="p">:</span>
-                <span class="n">task_data</span><span class="p">[</span><span class="s2">&quot;instruction_url&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instruction_url</span>
 
             <span class="c1"># Set up headers for the API request</span>
             <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
@@ -1095,7 +1089,7 @@ HumanAgent        </code>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating human task: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">report_type</span><span class="o">=</span><span class="s2">&quot;NotSpecified&quot;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Creates a human task with images, instructions, and questions.</span>
 
@@ -1110,7 +1104,8 @@ HumanAgent        </code>
                 <span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;reporting&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
-                    <span class="s2">&quot;thread_state&quot;</span><span class="p">:</span> <span class="n">thread_state</span>
+                    <span class="s2">&quot;thread_state&quot;</span><span class="p">:</span> <span class="n">thread_state</span><span class="p">,</span>
+                    <span class="s2">&quot;report_type&quot;</span><span class="p">:</span> <span class="n">report_type</span>
                 <span class="p">}</span>
 
                 <span class="c1"># Set up headers for the API request</span>
@@ -1159,7 +1154,7 @@ HumanAgent        </code>
 
 
 <h3 id="cuteagent.cuteagent.HumanAgent.__init__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HITL_token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">HITL_url</span><span class="o">=</span><span class="s1">&#39;https://su4matplq0.execute-api.us-west-1.amazonaws.com/prod/tasks&#39;</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HITL_token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">HITL_url</span><span class="o">=</span><span class="s1">&#39;https://d5x1qrpuf7.execute-api.us-west-1.amazonaws.com/prod/&#39;</span><span class="p">)</span></code>
 
   <span class="doc doc-properties">
       <small class="doc doc-property doc-property-special"><code>special</code></small>
@@ -1192,7 +1187,7 @@ HumanAgent        </code>
         <td><code>HITL_url</code></td>
         <td><code>str</code></td>
         <td><p>API endpoint URL</p></td>
-        <td><code>&#39;https://su4matplq0.execute-api.us-west-1.amazonaws.com/prod/tasks&#39;</code></td>
+        <td><code>&#39;https://d5x1qrpuf7.execute-api.us-west-1.amazonaws.com/prod/&#39;</code></td>
       </tr>
   </tbody>
 </table>
@@ -1221,7 +1216,7 @@ HumanAgent        </code>
 
 
 <h3 id="cuteagent.cuteagent.HumanAgent.reporting" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span> <span class="n">report_type</span><span class="o">=</span><span class="s1">&#39;NotSpecified&#39;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 
 <a href="#cuteagent.cuteagent.HumanAgent.reporting" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -1272,7 +1267,7 @@ HumanAgent        </code>
 </table>
         <details class="quote">
           <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
-          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">reporting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">report_type</span><span class="o">=</span><span class="s2">&quot;NotSpecified&quot;</span><span class="p">,</span> <span class="n">thread_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Creates a human task with images, instructions, and questions.</span>
 
@@ -1287,7 +1282,8 @@ HumanAgent        </code>
             <span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;reporting&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
-                <span class="s2">&quot;thread_state&quot;</span><span class="p">:</span> <span class="n">thread_state</span>
+                <span class="s2">&quot;thread_state&quot;</span><span class="p">:</span> <span class="n">thread_state</span><span class="p">,</span>
+                <span class="s2">&quot;report_type&quot;</span><span class="p">:</span> <span class="n">report_type</span>
             <span class="p">}</span>
 
             <span class="c1"># Set up headers for the API request</span>
@@ -1329,7 +1325,7 @@ HumanAgent        </code>
 
 
 <h3 id="cuteagent.cuteagent.HumanAgent.task" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span> <span class="n">instruction_markdown</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">instruction_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s1">&#39;NotSpecified&#39;</span><span class="p">)</span></code>
 
 
 <a href="#cuteagent.cuteagent.HumanAgent.task" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -1359,13 +1355,13 @@ HumanAgent        </code>
         <td><code>instruction_markdown</code></td>
         <td><code>str</code></td>
         <td><p>Markdown formatted instructions</p></td>
-        <td><code>None</code></td>
+        <td><em>required</em></td>
       </tr>
       <tr>
         <td><code>instruction_url</code></td>
         <td><code>str</code></td>
         <td><p>URL to instructions</p></td>
-        <td><code>None</code></td>
+        <td><em>required</em></td>
       </tr>
       <tr>
         <td><code>questions</code></td>
@@ -1397,7 +1393,7 @@ HumanAgent        </code>
 </table>
         <details class="quote">
           <summary>Source code in <code>cuteagent/cuteagent.py</code></summary>
-          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">instruction_markdown</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">instruction_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">image_urls</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span> <span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="s2">&quot;NotSpecified&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates a human task with images, instructions, and questions.</span>
 
@@ -1428,15 +1424,9 @@ HumanAgent        </code>
             <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;task&quot;</span><span class="p">,</span>
             <span class="s2">&quot;image_urls&quot;</span><span class="p">:</span> <span class="n">image_urls</span><span class="p">,</span>
             <span class="s2">&quot;questions&quot;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
-            <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span>
+            <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
+            <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="n">task_type</span>
         <span class="p">}</span>
-
-        <span class="c1"># Add optional parameters if provided</span>
-        <span class="k">if</span> <span class="n">instruction_markdown</span><span class="p">:</span>
-            <span class="n">task_data</span><span class="p">[</span><span class="s2">&quot;instruction_markdown&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instruction_markdown</span>
-
-        <span class="k">if</span> <span class="n">instruction_url</span><span class="p">:</span>
-            <span class="n">task_data</span><span class="p">[</span><span class="s2">&quot;instruction_url&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instruction_url</span>
 
         <span class="c1"># Set up headers for the API request</span>
         <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
@@ -2278,7 +2268,7 @@ WindowsAgent        </code>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="May 8, 2025 17:34:47"><span class="timeago" datetime="2025-05-08T17:34:47+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="May 8, 2025 17:34:47">2025-05-08</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="May 8, 2025 17:34:47 UTC"><span class="timeago" datetime="2025-05-08T17:34:47+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="May 8, 2025 17:34:47 UTC">2025-05-08</span>
   </span>
 
     
@@ -2288,7 +2278,7 @@ WindowsAgent        </code>
     <span class="md-icon" title="Created">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="May 8, 2025 17:34:47"><span class="timeago" datetime="2025-05-08T17:34:47+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="May 8, 2025 17:34:47">2025-05-08</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="May 8, 2025 17:34:47 UTC"><span class="timeago" datetime="2025-05-08T17:34:47+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="May 8, 2025 17:34:47 UTC">2025-05-08</span>
   </span>
 
     
