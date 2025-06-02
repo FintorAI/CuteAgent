@@ -289,7 +289,7 @@ class HumanAgent:
         self.HITL_token = HITL_token
         self.HITL_url = HITL_url
 
-    def task(self,  image_urls, thread_id="1234567890", questions=None, task_type="NotSpecified"):
+    def task(self,  image_urls, thread_id="1234567890", questions=None, task_type="NotSpecified", thread_state=None):
         """
         Creates a human task with images, instructions, and questions.
 
@@ -321,7 +321,8 @@ class HumanAgent:
                 "image_urls": image_urls,
                 "questions": questions,
                 "thread_id": thread_id,
-                "task_type": task_type
+                "task_type": task_type,
+                "thread_state": thread_state,
             }
 
             # Set up headers for the API request
