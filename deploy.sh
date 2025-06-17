@@ -61,10 +61,10 @@ if [ ! -d ".git" ]; then
     exit 1
 fi
 
-# Check if bumpversion is installed
-if ! command -v bumpversion &> /dev/null; then
-    print_warning "bumpversion not found, installing..."
-    pip install bump2version
+# Check if bump-my-version is installed
+if ! command -v bump-my-version &> /dev/null; then
+    print_warning "bump-my-version not found, installing..."
+    pip install bump-my-version
 fi
 
 # Check for uncommitted changes
@@ -85,22 +85,18 @@ print_status "Current version: $CURRENT_VERSION"
 
 # Bump version
 print_status "Bumping version ($VERSION_TYPE)..."
-bumpversion "$VERSION_TYPE" --no-tag
+bump-my-version bump "$VERSION_TYPE"
 
 # Get new version
 NEW_VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
 print_success "Version bumped from $CURRENT_VERSION to $NEW_VERSION"
 
-# Push changes
-print_status "Pushing changes to remote repository..."
+# Push tags and changes (bump-my-version creates the tag automatically)
+print_status "Pushing tags and changes to remote repository..."
+git push --tags
 git push origin main
 
-# Create and push tag
-print_status "Creating and pushing version tag..."
-git tag "v$NEW_VERSION"
-git push origin "v$NEW_VERSION"
-
-print_success "Tag v$NEW_VERSION created and pushed!"
+print_success "Tag v$NEW_VERSION pushed!"
 
 # Check if gh CLI is available for creating release
 if command -v gh &> /dev/null; then
