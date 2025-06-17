@@ -105,7 +105,7 @@ if __name__ == '__main__':
     
     # Create a TestRunner to run the tests
     runner = unittest.TextTestRunner(verbosity=2) # verbosity=2 for more detailed output
-    OS_URL = "https://fintor-cute-test-1.ngrok.app"
+    OS_URL = "https://fintor-ec2-test-2.ngrok.app" #"https://fintor-cute-test-1.ngrok.app"
 
     try:
         # test for windows agent
@@ -113,10 +113,10 @@ if __name__ == '__main__':
         # result = agent.click_element(150,200)
         # result = agent.act({"action": "INPUT","coordinate": [0,0], "value": "Masoud MJ", "model_selected": "claude"})
         result = agent.screenshot()
-        # agent.pause(1)
-        # result2 = agent.click_element(200,200)
-        # agent.pause(1)
-        # result3 = agent.click_element(250,200)
+        agent.pause(1)
+        result2 = agent.click_element(200,200)
+        agent.pause(1)
+        result3 = agent.click_element(250,200)
 
         # test for vision agent
         # agent = VisionAgent(model_selected="FINTOR_GUI")
