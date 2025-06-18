@@ -418,7 +418,7 @@ class StationAgent:
     """
     
     # Reserved variable names that cannot be set by users
-    RESERVED_VARIABLES = {"server", "serverThread"}
+    RESERVED_VARIABLES = {"server", "serverThread", "serverCheckpoint", "serverTaskType"}
     
     # Valid server status values
     VALID_SERVER_STATUS = {"busy", "idle"}
@@ -453,10 +453,15 @@ class StationAgent:
         if initial_state is not None:
             # Ensure initial_state includes server variables
             self.initial_state = initial_state.copy()
+            num_servers =  4  # Default number of servers
             if "server" not in self.initial_state:
-                self.initial_state["server"] = "idle"
+                self.initial_state["server"] = ["idle"] * num_servers
             if "serverThread" not in self.initial_state:
-                self.initial_state["serverThread"] = "idle"
+                self.initial_state["serverThread"] = ["idle"] * num_servers
+            if "serverCheckpoint" not in self.initial_state:
+                self.initial_state["serverCheckpoint"] = ["setup"] * num_servers
+            if "serverTaskType" not in self.initial_state:
+                self.initial_state["serverTaskType"] = ["taskPlaceholder"] * num_servers
                 
             # Use direct API call during initialization to bypass reserved variable protection
             data = {
@@ -677,7 +682,7 @@ class StationAgent:
                 variables["server"] = "idle"  # Always default to valid "idle" status
             if "serverThread" not in variables:
                 variables["serverThread"] = "idle"
-            
+                
             data = {
                 "stationThread": self.agent.station_thread_id,
                 "variables": variables
@@ -846,161 +851,203 @@ class StationAgent:
         Nested class for server management operations.
         
         Note: Server management methods use direct API calls to manage reserved variables
-        (server, serverThread) while maintaining absolute protection against user access.
+        (server, serverThread, serverCheckpoint, serverTaskType) which are arrays to manage multiple servers.
         Server status can only be "busy" or "idle".
         """
         
         def __init__(self, agent: 'StationAgent'):
             self.agent = agent
         
-        def _validate_server_status(self, status: str) -> bool:
-            """
-            Validate that server status is one of the allowed values.
-            
-            Args:
-                status (str): Server status to validate
-                
-            Returns:
-                bool: True if valid, False otherwise
-            """
-            return status in self.agent.VALID_SERVER_STATUS
-        
-        def _set_server_status(self, status: str, thread_value: str = "idle") -> Dict:
-            """
-            Internal method to set server status with validation.
-            
-            Args:
-                status (str): Server status ("busy" or "idle")
-                thread_value (str): ServerThread value
-                
-            Returns:
-                dict: Result of the operation
-            """
-            if not self._validate_server_status(status):
-                return {
-                    "status": "error", 
-                    "error": f"Invalid server status '{status}'. Must be one of: {self.agent.VALID_SERVER_STATUS}"
-                }
-            
-            # Update server status using direct API calls
-            server_data = {
-                "stationThread": self.agent.station_thread_id,
-                "attributeName": "server",
-                "attributeValue": status
-            }
-            
-            thread_data = {
-                "stationThread": self.agent.station_thread_id,
-                "attributeName": "serverThread",
-                "attributeValue": thread_value
-            }
-            
-            response1 = self.agent._make_request("PUT", "/shared-state", data=server_data)
-            response2 = self.agent._make_request("PUT", "/shared-state", data=thread_data)
-            
-            success1 = response1 is not None and response1.get("success", False)
-            success2 = response2 is not None and response2.get("success", False)
-            
-            return {"success": success1 and success2, "response1": response1, "response2": response2}
-        
-        def load(self, task_type: str) -> Dict:
+        def load(self, serverThreadId: str, serverCheckpoint: str = "setup", serverIndex: int = 0, serverTaskType: str = "taskPlaceholder") -> Dict:
             """
             Load server for a specific task type.
-            
+
             Args:
-                task_type (str): Type of task to load the server for
-                
+                serverThreadId (str): The thread ID to assign to the server.
+                serverCheckpoint (str, optional): The checkpoint to check against. Defaults to "setup".
+                serverIndex (int, optional): The index of the server to load. Defaults to 0.
+                serverTaskType (str, optional): The task type to assign. Defaults to "taskPlaceholder".
+
             Returns:
                 dict: Status information about the load operation
             """
-            # Check if server is busy
-            current_server_status = self.agent.state.get("server")
-            
-            # Validate current server status if it exists
-            if current_server_status is not None and not self._validate_server_status(current_server_status):
-                return {
-                    "status": "error", 
-                    "error": f"Invalid current server status '{current_server_status}'. Must be 'busy' or 'idle'"
-                }
-            
-            if current_server_status == "busy":
+            # Get current server states
+            servers = self.agent.state.get("server")
+            checkpoints = self.agent.state.get("serverCheckpoint")
+
+            if servers is None or checkpoints is None or not isinstance(servers, list) or not isinstance(checkpoints, list):
+                 return {"status": "error", "error": "Server state variables are not initialized as arrays."}
+
+            if not (0 <= serverIndex < len(servers)):
+                return {"status": "error", "error": f"serverIndex {serverIndex} is out of bounds."}
+
+            if servers[serverIndex] == "busy":
                 return {"status": "busy", "error": "Server is busy"}
+
+            if checkpoints[serverIndex] != serverCheckpoint:
+                return {"status": "wrongCheckpoint", "error": f"Incorrect checkpoint. Expected {checkpoints[serverIndex]}, got {serverCheckpoint}"}
+
+            # Update server state arrays
+            servers[serverIndex] = "busy"
+            checkpoints[serverIndex] = "running"
             
-            # Set server to busy using validated method
-            result = self._set_server_status("busy", task_type)
+            threads = self.agent.state.get("serverThread") or ["idle"] * len(servers)
+            task_types = self.agent.state.get("serverTaskType") or ["taskPlaceholder"] * len(servers)
+
+            threads[serverIndex] = serverThreadId
+            task_types[serverIndex] = serverTaskType
             
-            if result["success"]:
-                return {"status": "loaded", "serverThread": task_type}
-            else:
-                return {"status": "error", "error": "Failed to update server status"}
-        
-        def unload(self) -> Dict:
+            # Persist changes
+            self.agent.state.set("server", servers)
+            self.agent.state.set("serverCheckpoint", checkpoints)
+            self.agent.state.set("serverThread", threads)
+            self.agent.state.set("serverTaskType", task_types)
+
+            return {"status": "loaded", "serverThread": serverThreadId}
+
+        def unload(self, checkpoint: str, index: int = 0) -> Dict:
             """
             Unload the server and set it to idle.
-            
+
+            Args:
+                checkpoint (str): The checkpoint to set after unloading.
+                index (int, optional): The index of the server to unload. Defaults to 0.
+
             Returns:
                 dict: Status information about the unload operation
             """
-            # Check if server is already idle
-            current_server_status = self.agent.state.get("server")
-            
-            # Validate current server status if it exists
-            if current_server_status is not None and not self._validate_server_status(current_server_status):
-                return {
-                    "status": "error", 
-                    "error": f"Invalid current server status '{current_server_status}'. Must be 'busy' or 'idle'"
-                }
-            
-            if current_server_status == "idle":
+            servers = self.agent.state.get("server")
+            if servers is None or not isinstance(servers, list):
+                 return {"status": "error", "error": "Server state is not initialized correctly."}
+
+            if not (0 <= index < len(servers)):
+                return {"status": "error", "error": f"serverIndex {index} is out of bounds."}
+
+            if servers[index] == "idle":
                 return {"status": "idle", "error": "Server is already idle"}
-            
-            # Set server to idle using validated method
-            result = self._set_server_status("idle", "idle")
-            
-            if result["success"]:
-                return {"status": "unloaded"}
-            else:
-                return {"status": "error", "error": "Failed to update server status"}
-        
-        def avail(self) -> Dict:
+
+            servers[index] = "idle"
+            checkpoints = self.agent.state.get("serverCheckpoint") or ["setup"] * len(servers)
+            checkpoints[index] = checkpoint
+
+            self.agent.state.set("server", servers)
+            self.agent.state.set("serverCheckpoint", checkpoints)
+
+            return {"status": "unloaded"}
+
+        def avail(self, index: int = 0) -> Dict:
             """
-            Get current server availability status.
-            
+            Get current server availability status for a specific server.
+
+            Args:
+                index (int, optional): The index of the server to check. Defaults to 0.
+
             Returns:
-                dict: Current server and serverThread values
+                dict: Current server and serverThread values for the specified index.
                       Server status will be "busy" or "idle" only
             """
-            server_status = self.agent.state.get("server")
-            server_thread = self.agent.state.get("serverThread")
-            
-            # Validate server status if it exists
-            if server_status is not None and not self._validate_server_status(server_status):
+            servers = self.agent.state.get("server")
+            threads = self.agent.state.get("serverThread")
+            checkpoints = self.agent.state.get("serverCheckpoint")
+            task_types = self.agent.state.get("serverTaskType")
+
+            if any(v is None or not isinstance(v, list) for v in [servers, threads, checkpoints, task_types]):
+                return {"status": "error", "error": "Server state is not initialized correctly as arrays."}
+
+            if not (0 <= index < len(servers)):
+                return {"status": "error", "error": f"serverIndex {index} is out of bounds."}
+
+            server_status = servers[index]
+            if server_status not in self.agent.VALID_SERVER_STATUS:
                 return {
                     "server": "idle",  # Default to safe state
-                    "serverThread": server_thread,
+                    "serverThread": threads[index],
+                    "serverCheckpoint": checkpoints[index],
+                    "serverTaskType": task_types[index],
                     "warning": f"Invalid server status '{server_status}' detected, defaulting to 'idle'"
                 }
-            
+
             return {
                 "server": server_status,
-                "serverThread": server_thread
+                "serverThread": threads[index],
+                "serverCheckpoint": checkpoints[index],
+                "serverTaskType": task_types[index]
             }
     
     def uninterrupt(self, task_type: str) -> Dict:
         """
-        Get task thread ID for resuming interrupted tasks.
-        
+        Resumes an interrupted LangGraph execution for a given task type.
+
+        This function retrieves the thread ID, LangGraph URL, and assistant ID
+        from the shared state based on the task_type, then sends a resume
+        command to the LangGraph instance.
+
         Args:
-            task_type (str): Type of task to get thread ID for
-            
+            task_type (str): The type of task to uninterrupt.
+
         Returns:
-            dict: Resume information or error message
+            Dict: A dictionary containing the result of the operation.
+                  - {"success": True, "message": "...", "response": ...} on success.
+                  - {"success": False, "error": "..."} on failure.
         """
+        print(f"Attempting to uninterrupt task: {task_type}")
+        try:
+            from langgraph_sdk import get_sync_client, Command
+        except ImportError as e:
+            error_message = f"Failed to import LangGraph SDK: {str(e)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
+
         thread_id_var = f"{task_type}_thread_id"
-        thread_id_value = self.state.get(thread_id_var)
-        
-        if thread_id_value is not None:
-            return {"resumeFrom": thread_id_value}
-        else:
-            return {"error": "Thread ID not found"}
+        url_var = f"{task_type}_URL"
+        assistant_var = f"{task_type}_Assistant"
+
+        thread_id = self.state.get(thread_id_var)
+        langgraph_url = self.state.get(url_var)
+        assistant_id = self.state.get(assistant_var)
+
+        if not all([thread_id, langgraph_url, assistant_id]):
+            missing = []
+            if not thread_id:
+                missing.append(thread_id_var)
+            if not langgraph_url:
+                missing.append(url_var)
+            if not assistant_id:
+                missing.append(assistant_var)
+            error_message = f"Missing required state variables: {', '.join(missing)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
+
+        print(f"Found thread_id: {thread_id}, url: {langgraph_url}, assistant_id: {assistant_id}")
+
+        try:
+            client = get_sync_client(url=langgraph_url, api_key=self.token)
+            print("Successfully initialized LangGraph client.")
+        except Exception as e:
+            error_message = f"Failed to initialize LangGraph client: {str(e)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
+
+        try:
+            resume_payload = {"nextStep": "proceed"}
+            print(f"Resuming run with payload: {resume_payload}")
+
+            resumed_state = client.runs.wait(
+                thread_id,
+                assistant_id,
+                command=Command(resume=resume_payload)
+            )
+
+            print(f"Successfully resumed thread: {thread_id}")
+            return {
+                'success': True,
+                'thread_id': thread_id,
+                'task_type': task_type,
+                'message': 'Successfully resumed station execution',
+                'response_preview': str(resumed_state)[:200]
+            }
+        except Exception as e:
+            error_message = f"Error resuming LangGraph execution: {str(e)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
 

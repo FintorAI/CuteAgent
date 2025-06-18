@@ -98,18 +98,25 @@ if ! command -v bump-my-version &> /dev/null; then
 fi
 
 # Add all current changes to git staging
-# This ensures they are included in the release commit
 print_status "Staging all uncommitted changes..."
 git add .
+
+# Check if there are staged changes to commit
+if ! git diff --cached --quiet; then
+    print_status "Committing staged changes..."
+    git commit -m "$COMMIT_MESSAGE"
+    print_success "Changes committed successfully"
+else
+    print_status "No changes to commit"
+fi
 
 # Get current version from the tool
 CURRENT_VERSION=$(bump-my-version show current_version)
 print_status "Current version: $CURRENT_VERSION"
 
 # Bump version, commit, and tag in one atomic operation
-# The commit will include all staged changes.
-print_status "Bumping version, committing staged changes, and creating tag..."
-bump-my-version bump "$VERSION_TYPE" --message "Release v{new_version}: $COMMIT_MESSAGE"
+print_status "Bumping version and creating tag..."
+bump-my-version bump "$VERSION_TYPE" --message "Release v{new_version}"
 
 # Get new version
 NEW_VERSION=$(bump-my-version show new_version)
