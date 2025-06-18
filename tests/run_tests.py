@@ -33,13 +33,13 @@ def print_usage():
 def run_mock_tests():
     """Run mock tests."""
     try:
-        from test_station_agent_mock import run_mock_tests
+        from mock.test_station_agent_mock import run_mock_tests
         print("🧪 Running Mock Tests (no API required)...")
         print("=" * 50)
         return run_mock_tests()
     except ImportError as e:
         print(f"❌ Import Error: {e}")
-        print("Make sure test_station_agent_mock.py exists")
+        print("Make sure tests/mock/test_station_agent_mock.py exists")
         return False
     except Exception as e:
         print(f"❌ Mock Test Error: {e}")
@@ -48,7 +48,7 @@ def run_mock_tests():
 def run_real_tests(token=None, url=None):
     """Run real API tests."""
     try:
-        from test_station_agent_real import main as run_real_tests_main
+        from real_api.test_station_agent_real import main as run_real_tests_main
         
         # Set up environment variables if provided
         if token:
@@ -77,7 +77,7 @@ def run_real_tests(token=None, url=None):
             
     except ImportError as e:
         print(f"❌ Import Error: {e}")
-        print("Make sure test_station_agent_real.py exists")
+        print("Make sure tests/real_api/test_station_agent_real.py exists")
         return False
     except Exception as e:
         print(f"❌ Real Test Error: {e}")

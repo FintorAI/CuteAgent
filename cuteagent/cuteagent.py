@@ -448,6 +448,13 @@ class StationAgent:
         # Initialize nested classes
         self.state = self.State(self)
         self.server = self.Server(self)
+        
+        # Get initial state from SharedState API
+        self.initial_state = self.state.pull()
+        if self.initial_state:
+            print(f"🔄 StationAgent initialized with {len(self.initial_state)} existing variables from SharedState API")
+        else:
+            print("🆕 StationAgent initialized with empty state - no existing variables found")
     
     def _make_request(self, method: str, endpoint: str, params: Optional[Dict] = None, 
                      data: Optional[Dict] = None, max_retries: int = 3) -> Optional[Dict]:
