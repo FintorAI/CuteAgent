@@ -34,10 +34,17 @@ if [ -z "$1" ]; then
     print_error "Commit message is required!"
     echo "Usage: ./deploy.sh \"Your commit message\" [patch|minor|major]"
     echo ""
+    echo "Version Types:"
+    echo "  patch - Bug fixes, small changes (auto-deploy)"
+    echo "  minor - New features (requires confirmation)"
+    echo "  major - Breaking changes (requires confirmation)"
+    echo ""
     echo "Examples:"
-    echo "  ./deploy.sh \"Add new StationAgent features\" patch"
+    echo "  ./deploy.sh \"Fix bug in state sync\" patch"
+    echo "  ./deploy.sh \"Add new StationAgent features\" minor"
     echo "  ./deploy.sh \"Breaking changes to API\" major"
-    echo "  ./deploy.sh \"Add new features\" minor"
+    echo ""
+    echo "Note: Minor and major releases require manual confirmation."
     exit 1
 fi
 
@@ -49,6 +56,36 @@ if [[ ! "$VERSION_TYPE" =~ ^(patch|minor|major)$ ]]; then
     print_error "Invalid version type: $VERSION_TYPE"
     echo "Valid types: patch, minor, major"
     exit 1
+fi
+
+# Safety check for minor and major versions - require confirmation
+if [[ "$VERSION_TYPE" == "minor" || "$VERSION_TYPE" == "major" ]]; then
+    print_warning "⚠️  You are about to create a $VERSION_TYPE version release!"
+    print_warning "This indicates significant changes that may affect users."
+    echo ""
+    
+    if [[ "$VERSION_TYPE" == "major" ]]; then
+        print_warning "🚨 MAJOR version indicates BREAKING CHANGES!"
+        print_warning "This will increment from X.Y.Z to (X+1).0.0"
+    else
+        print_warning "📈 MINOR version indicates NEW FEATURES!"
+        print_warning "This will increment from X.Y.Z to X.(Y+1).0"
+    fi
+    
+    echo ""
+    print_status "Commit message: $COMMIT_MESSAGE"
+    echo ""
+    
+    read -p "Are you sure you want to proceed with $VERSION_TYPE version bump? (yes/no): " confirm
+    
+    if [[ "$confirm" != "yes" ]]; then
+        print_status "Deployment cancelled by user."
+        print_status "💡 Tip: Use 'patch' for bug fixes and small changes:"
+        print_status "   ./deploy.sh \"Your message\" patch"
+        exit 0
+    fi
+    
+    print_success "✅ $VERSION_TYPE version bump confirmed!"
 fi
 
 print_status "Starting deployment process..."
