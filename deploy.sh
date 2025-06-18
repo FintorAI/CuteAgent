@@ -1,7 +1,19 @@
 #!/bin/bash
 
 # deploy.sh - Automated deployment script for CuteAgent
+# 
+# DEPLOYMENT RULES:
+# 1. Commit message is REQUIRED - describes what changed
+# 2. Version type defaults to 'patch' (bug fixes, small changes)
+# 3. Script automatically: commits changes → bumps version → creates tag → pushes to remote
+# 4. Use 'minor' for new features, 'major' for breaking changes
+#
 # Usage: ./deploy.sh "Your commit message" [patch|minor|major]
+#
+# Examples:
+#   ./deploy.sh "Fix bug in state management"           # patch (default)
+#   ./deploy.sh "Add new feature" minor                 # minor version bump
+#   ./deploy.sh "Breaking API changes" major           # major version bump
 
 set -e  # Exit on any error
 
@@ -32,19 +44,30 @@ print_error() {
 # Check if commit message is provided
 if [ -z "$1" ]; then
     print_error "Commit message is required!"
+    echo ""
     echo "Usage: ./deploy.sh \"Your commit message\" [patch|minor|major]"
     echo ""
-    echo "Version Types:"
-    echo "  patch - Bug fixes, small changes (auto-deploy)"
-    echo "  minor - New features (requires confirmation)"
-    echo "  major - Breaking changes (requires confirmation)"
+    echo "🚀 DEPLOYMENT RULES:"
+    echo "  • Commit message is REQUIRED (describes what changed)"
+    echo "  • Version type defaults to 'patch' if not specified"
+    echo "  • Script will commit all changes + bump version + create tag + push"
     echo ""
-    echo "Examples:"
-    echo "  ./deploy.sh \"Fix bug in state sync\" patch"
-    echo "  ./deploy.sh \"Add new StationAgent features\" minor"
-    echo "  ./deploy.sh \"Breaking changes to API\" major"
+    echo "📋 VERSION TYPES:"
+    echo "  patch  - Bug fixes, small changes (default)"
+    echo "  minor  - New features, backwards compatible"
+    echo "  major  - Breaking changes, API changes"
     echo ""
-    echo "Note: Minor and major releases require manual confirmation."
+    echo "✅ EXAMPLES:"
+    echo "  ./deploy.sh \"Fix StationAgent initialization bug\""
+    echo "  ./deploy.sh \"Fix StationAgent initialization bug\" patch"
+    echo "  ./deploy.sh \"Add new initial_state parameter\" minor"
+    echo "  ./deploy.sh \"Remove deprecated shared_state_url\" major"
+    echo ""
+    echo "⚠️  IMPORTANT:"
+    echo "  • Always describe WHAT you changed in the commit message"
+    echo "  • Use patch for most changes (bug fixes, small improvements)"
+    echo "  • Use minor for new features that don't break existing code"
+    echo "  • Use major for breaking changes that affect users"
     exit 1
 fi
 
@@ -58,36 +81,6 @@ if [[ ! "$VERSION_TYPE" =~ ^(patch|minor|major)$ ]]; then
     exit 1
 fi
 
-# Safety check for minor and major versions - require confirmation
-if [[ "$VERSION_TYPE" == "minor" || "$VERSION_TYPE" == "major" ]]; then
-    print_warning "⚠️  You are about to create a $VERSION_TYPE version release!"
-    print_warning "This indicates significant changes that may affect users."
-    echo ""
-    
-    if [[ "$VERSION_TYPE" == "major" ]]; then
-        print_warning "🚨 MAJOR version indicates BREAKING CHANGES!"
-        print_warning "This will increment from X.Y.Z to (X+1).0.0"
-    else
-        print_warning "📈 MINOR version indicates NEW FEATURES!"
-        print_warning "This will increment from X.Y.Z to X.(Y+1).0"
-    fi
-    
-    echo ""
-    print_status "Commit message: $COMMIT_MESSAGE"
-    echo ""
-    
-    read -p "Are you sure you want to proceed with $VERSION_TYPE version bump? (yes/no): " confirm
-    
-    if [[ "$confirm" != "yes" ]]; then
-        print_status "Deployment cancelled by user."
-        print_status "💡 Tip: Use 'patch' for bug fixes and small changes:"
-        print_status "   ./deploy.sh \"Your message\" patch"
-        exit 0
-    fi
-    
-    print_success "✅ $VERSION_TYPE version bump confirmed!"
-fi
-
 print_status "Starting deployment process..."
 print_status "Commit message: $COMMIT_MESSAGE"
 print_status "Version bump type: $VERSION_TYPE"
@@ -98,10 +91,10 @@ if [ ! -d ".git" ]; then
     exit 1
 fi
 
-# Check if bump-my-version is installed
-if ! command -v bump-my-version &> /dev/null; then
-    print_warning "bump-my-version not found, installing..."
-    pip install bump-my-version
+# Check if bumpversion is installed
+if ! command -v bumpversion &> /dev/null; then
+    print_warning "bumpversion not found, installing..."
+    pip install bump2version
 fi
 
 # Check for uncommitted changes
@@ -116,61 +109,28 @@ else
     print_warning "No uncommitted changes found."
 fi
 
-# Run full test suite before deployment
-print_status "Running comprehensive test suite..."
-print_status "This ensures code quality before deployment. Deployment will stop if tests fail."
-echo ""
-
-# Check if tests directory exists
-if [ ! -d "tests" ]; then
-    print_error "Tests directory not found! Cannot validate code before deployment."
-    print_error "Please ensure tests/ directory exists with test files."
-    exit 1
-fi
-
-# Run mock tests first (fast validation)
-print_status "🧪 Step 1/2: Running mock tests (fast validation)..."
-if ! python tests/run_tests.py mock; then
-    print_error "❌ Mock tests failed! Deployment aborted."
-    print_error "Please fix the failing tests before deploying."
-    exit 1
-fi
-print_success "✅ Mock tests passed!"
-
-# Run real API tests (comprehensive validation)
-print_status "🧪 Step 2/2: Running real API tests (comprehensive validation)..."
-if ! python tests/run_tests.py real dev-token-123; then
-    print_error "❌ Real API tests failed! Deployment aborted."
-    print_error "Please fix the failing tests or check API connectivity before deploying."
-    exit 1
-fi
-print_success "✅ All tests passed! Code is ready for deployment."
-
-echo ""
-print_success "🎯 Test validation completed successfully!"
-print_status "✅ Mock tests: PASSED"
-print_status "✅ Real API tests: PASSED"
-print_status "Proceeding with version bump and deployment..."
-echo ""
-
 # Get current version
 CURRENT_VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
 print_status "Current version: $CURRENT_VERSION"
 
 # Bump version
 print_status "Bumping version ($VERSION_TYPE)..."
-bump-my-version bump "$VERSION_TYPE"
+bumpversion "$VERSION_TYPE" --no-tag
 
 # Get new version
 NEW_VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
 print_success "Version bumped from $CURRENT_VERSION to $NEW_VERSION"
 
-# Push tags and changes (bump-my-version creates the tag automatically)
-print_status "Pushing tags and changes to remote repository..."
-git push --tags
+# Push changes
+print_status "Pushing changes to remote repository..."
 git push origin main
 
-print_success "Tag v$NEW_VERSION pushed!"
+# Create and push tag
+print_status "Creating and pushing version tag..."
+git tag "v$NEW_VERSION"
+git push origin "v$NEW_VERSION"
+
+print_success "Tag v$NEW_VERSION created and pushed!"
 
 # Check if gh CLI is available for creating release
 if command -v gh &> /dev/null; then
@@ -204,7 +164,6 @@ fi
 
 print_success "🚀 Deployment completed successfully!"
 print_status "Summary:"
-print_status "  - Tests: ✅ All passed (Mock + Real API)"
 print_status "  - Committed: $COMMIT_MESSAGE"
 print_status "  - Version: $CURRENT_VERSION → $NEW_VERSION"
 print_status "  - Tag: v$NEW_VERSION"

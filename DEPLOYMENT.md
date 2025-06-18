@@ -2,29 +2,46 @@
 
 This guide explains how to deploy new versions of CuteAgent using the automated deployment system.
 
-## 🚀 Quick Deployment
+## 🚀 Deployment Rules
+
+**IMPORTANT**: Follow these rules for all deployments:
+
+1. **Commit message is REQUIRED** - Always describe what changed
+2. **Version type defaults to `patch`** - Most changes should be patches
+3. **Use descriptive commit messages** - They become part of the release notes
+4. **One deployment per change** - Don't batch unrelated changes
+
+## 📋 Quick Deployment
 
 Use the `deploy.sh` script for automated deployments:
 
 ```bash
-# Patch version (0.0.15 → 0.0.16)
-./deploy.sh "Add new StationAgent features"
+# Patch version (DEFAULT) - bug fixes, small changes
+./deploy.sh "Fix StationAgent initialization bug"
 
-# Minor version (0.0.15 → 0.1.0) 
-./deploy.sh "Add significant new features" minor
+# Same as above (patch is default)
+./deploy.sh "Fix StationAgent initialization bug" patch
 
-# Major version (0.0.15 → 1.0.0)
-./deploy.sh "Breaking API changes" major
+# Minor version - new features, backwards compatible
+./deploy.sh "Add new initial_state parameter" minor
+
+# Major version - breaking changes, API changes  
+./deploy.sh "Remove deprecated shared_state_url parameter" major
 ```
 
 ## 📋 What the Deploy Script Does
 
-1. **Validates input** - Checks commit message and version type
-2. **Commits changes** - Stages and commits all uncommitted changes
-3. **Bumps version** - Updates version in `pyproject.toml` and `__init__.py`
-4. **Creates git tag** - Creates and pushes a version tag (e.g., `v0.0.16`)
-5. **Creates GitHub release** - Automatically creates a GitHub release
-6. **Triggers PyPI deployment** - Release creation triggers the PyPI publishing workflow
+The script performs these steps **automatically**:
+
+1. **Validates input** - Checks commit message is provided and version type is valid
+2. **Commits changes** - Stages and commits all uncommitted changes with your message
+3. **Bumps version** - Updates version number in `pyproject.toml` 
+4. **Pushes changes** - Pushes the commit to remote repository
+5. **Creates and pushes tag** - Creates version tag (e.g., `v0.1.1`) and pushes it
+6. **Creates GitHub release** - Automatically creates a GitHub release (if `gh` CLI available)
+7. **Triggers PyPI deployment** - Release creation triggers automatic PyPI publishing
+
+**All in one command!** ✨
 
 ## 🔄 Automated Workflow
 
@@ -65,31 +82,38 @@ Use the `deploy.sh` script for automated deployments:
 
 ## 📦 Version Types
 
-- **patch** (default): Bug fixes, small improvements (0.0.15 → 0.0.16)
-- **minor**: New features, backwards compatible (0.0.15 → 0.1.0)  
-- **major**: Breaking changes (0.0.15 → 1.0.0)
+| Type | When to Use | Example Change | Version Change |
+|------|-------------|----------------|----------------|
+| **patch** *(default)* | Bug fixes, small improvements, documentation | Fix initialization bug | 0.1.0 → 0.1.1 |
+| **minor** | New features, backwards compatible changes | Add new parameter | 0.1.0 → 0.2.0 |
+| **major** | Breaking changes, API changes | Remove deprecated feature | 0.1.0 → 1.0.0 |
+
+### 🎯 **When in doubt, use `patch`** - it's the safe default for most changes.
 
 ## 🎯 Usage Examples
 
-### Standard Feature Addition
+### Most Common: Bug Fixes & Small Changes (patch - default)
 ```bash
-./deploy.sh "Add comprehensive documentation and examples"
+./deploy.sh "Fix StationAgent initialization bug"
+./deploy.sh "Update documentation with new examples"  
+./deploy.sh "Improve error handling in state.sync"
 ```
 
-### New Minor Feature
+### New Features (minor - requires explicit specification)
 ```bash
+./deploy.sh "Add initial_state parameter to StationAgent" minor
+./deploy.sh "Add new sync_multiple method" minor
 ./deploy.sh "Add server coordination features" minor
 ```
 
-### Breaking Changes
+### Breaking Changes (major - requires explicit specification)
 ```bash
+./deploy.sh "Remove deprecated shared_state_url parameter" major
 ./deploy.sh "Refactor API for better usability" major
+./deploy.sh "Change StationAgent constructor signature" major
 ```
 
-### Bug Fix
-```bash
-./deploy.sh "Fix authentication error handling" patch
-```
+### 💡 **Remember**: If you don't specify a version type, it defaults to `patch`!
 
 ## 🔍 Monitoring Deployments
 
