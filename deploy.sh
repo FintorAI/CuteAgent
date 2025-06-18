@@ -4,16 +4,15 @@
 # 
 # DEPLOYMENT RULES:
 # 1. Commit message is REQUIRED - describes what changed
-# 2. Version type defaults to 'patch' (bug fixes, small changes)
-# 3. Script automatically: commits changes → bumps version → creates tag → pushes to remote
-# 4. Use 'minor' for new features, 'major' for breaking changes
+# 2. All deployments are patch-level version bumps
+# 3. Script automatically: commits changes → bumps patch version → creates tag → pushes to remote
 #
-# Usage: ./deploy.sh "Your commit message" [patch|minor|major]
+# Usage: ./deploy.sh "Your commit message"
 #
 # Examples:
-#   ./deploy.sh "Fix bug in state management"           # patch (default)
-#   ./deploy.sh "Add new feature" minor                 # minor version bump
-#   ./deploy.sh "Breaking API changes" major           # major version bump
+#   ./deploy.sh "Fix bug in state management"
+#   ./deploy.sh "Add new feature"
+#   ./deploy.sh "Update documentation"
 
 set -e  # Exit on any error
 
@@ -45,45 +44,31 @@ print_error() {
 if [ -z "$1" ]; then
     print_error "Commit message is required!"
     echo ""
-    echo "Usage: ./deploy.sh \"Your commit message\" [patch|minor|major]"
+    echo "Usage: ./deploy.sh \"Your commit message\""
     echo ""
     echo "🚀 DEPLOYMENT RULES:"
     echo "  • Commit message is REQUIRED (describes what changed)"
-    echo "  • Version type defaults to 'patch' if not specified"
-    echo "  • Script will commit all changes + bump version + create tag + push"
-    echo ""
-    echo "📋 VERSION TYPES:"
-    echo "  patch  - Bug fixes, small changes (default)"
-    echo "  minor  - New features, backwards compatible"
-    echo "  major  - Breaking changes, API changes"
+    echo "  • All deployments are patch-level version bumps"
+    echo "  • Script will commit all changes + bump patch version + create tag + push"
     echo ""
     echo "✅ EXAMPLES:"
     echo "  ./deploy.sh \"Fix StationAgent initialization bug\""
-    echo "  ./deploy.sh \"Fix StationAgent initialization bug\" patch"
-    echo "  ./deploy.sh \"Add new initial_state parameter\" minor"
-    echo "  ./deploy.sh \"Remove deprecated shared_state_url\" major"
+    echo "  ./deploy.sh \"Add new uninterrupt method\""
+    echo "  ./deploy.sh \"Update documentation\""
+    echo "  ./deploy.sh \"Add new dependency\""
     echo ""
     echo "⚠️  IMPORTANT:"
     echo "  • Always describe WHAT you changed in the commit message"
-    echo "  • Use patch for most changes (bug fixes, small improvements)"
-    echo "  • Use minor for new features that don't break existing code"
-    echo "  • Use major for breaking changes that affect users"
+    echo "  • All changes are deployed as patch-level updates"
     exit 1
 fi
 
 COMMIT_MESSAGE="$1"
-VERSION_TYPE="${2:-patch}"  # Default to patch if not specified
-
-# Validate version type
-if [[ ! "$VERSION_TYPE" =~ ^(patch|minor|major)$ ]]; then
-    print_error "Invalid version type: $VERSION_TYPE"
-    echo "Valid types: patch, minor, major"
-    exit 1
-fi
+VERSION_TYPE="patch"  # Always patch
 
 print_status "Starting deployment process..."
 print_status "Commit message: $COMMIT_MESSAGE"
-print_status "Version bump type: $VERSION_TYPE"
+print_status "Version bump type: $VERSION_TYPE (patch only)"
 
 # Check if we're in a git repository
 if [ ! -d ".git" ]; then

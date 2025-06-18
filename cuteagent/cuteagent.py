@@ -423,19 +423,21 @@ class StationAgent:
     # Valid server status values
     VALID_SERVER_STATUS = {"busy", "idle"}
     
-    def __init__(self, station_thread_id: str, graph_thread_id: str, token: str, initial_state: Optional[Dict[str, Any]] = None):
+    def __init__(self, station_thread_id: str, graph_thread_id: str, token: str, initial_state: Optional[Dict[str, Any]] = None, langgraph_token: Optional[str] = None):
         """
-        Initialize the StationAgent with thread IDs and authentication token.
+        Initialize the StationAgent with thread IDs and authentication tokens.
         
         Args:
             station_thread_id (str): Identifier for the station/workflow instance
             graph_thread_id (str): LangGraph thread identifier
-            token (str): Authentication token for API access
+            token (str): Authentication token for SharedState API access
             initial_state (dict, optional): Initial state object to push to SharedState API. Defaults to None.
+            langgraph_token (str, optional): Authentication token for LangGraph API access. Required for uninterrupt functionality.
         """
         self.station_thread_id = station_thread_id
         self.graph_thread_id = graph_thread_id
         self.token = token
+        self.langgraph_token = langgraph_token
         self.base_url = SHARED_STATE_URL
         
         # Set up HTTP session with authentication
@@ -1020,8 +1022,14 @@ class StationAgent:
 
         print(f"Found thread_id: {thread_id}, url: {langgraph_url}, assistant_id: {assistant_id}")
 
+        # Check if langgraph_token is provided
+        if not self.langgraph_token:
+            error_message = "LangGraph token is required for uninterrupt functionality. Please provide langgraph_token when initializing StationAgent."
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
+
         try:
-            client = get_sync_client(url=langgraph_url, api_key=self.token)
+            client = get_sync_client(url=langgraph_url, api_key=self.langgraph_token)
             print("Successfully initialized LangGraph client.")
         except Exception as e:
             error_message = f"Failed to initialize LangGraph client: {str(e)}"

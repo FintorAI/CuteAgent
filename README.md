@@ -75,7 +75,8 @@ async def your_langgraph_node(state: State, config: RunnableConfig) -> State:
         StationAgent,
         station_thread_id=state.stationThreadId,
         graph_thread_id=config.get("thread_id"),
-        token=config.get("shared_state_token", "your-api-token")
+        token=config.get("shared_state_token", "your-api-token"),
+        langgraph_token=config.get("langgraph_token")  # Required for uninterrupt functionality
     )
     # 🔄 Agent now has agent.initial_state with any existing variables
     
@@ -460,7 +461,8 @@ async def complete_workflow_node(state: WorkflowState, config) -> WorkflowState:
         station_thread_id=state.stationThreadId or "main-workflow",
         graph_thread_id=configuration.get("thread_id"),
         token=configuration.get("shared_state_token"),
-        initial_state=initial_workflow_state
+        initial_state=initial_workflow_state,
+        langgraph_token=configuration.get("langgraph_token")
     )
     
     # 2. Sync shared state to get latest workflow data
@@ -561,7 +563,7 @@ This example demonstrates how all three agents work together with proper async h
 
 ## Constructor and Initialization
 
-### `StationAgent(station_thread_id, graph_thread_id, token, initial_state=None)`
+### `StationAgent(station_thread_id, graph_thread_id, token, initial_state=None, langgraph_token=None)`
 
 Create a new StationAgent instance with initial state push capability.
 
@@ -573,8 +575,9 @@ agent = await asyncio.to_thread(
     StationAgent,
     station_thread_id="workflow-123",
     graph_thread_id="thread-456", 
-    token="your-token",
-    initial_state=initial_state  # optional
+    token="your-shared-state-token",
+    initial_state=initial_state,  # optional
+    langgraph_token="your-langgraph-token"  # required for uninterrupt functionality
 )
 ```
 
@@ -583,6 +586,7 @@ agent = await asyncio.to_thread(
 - `graph_thread_id` (str): LangGraph thread identifier  
 - `token` (str): Authentication token for SharedState API
 - `initial_state` (dict, optional): Initial state object to push to SharedState API
+- `langgraph_token` (str, optional): Authentication token for LangGraph API. Required for `uninterrupt()` functionality.
 
 **Automatic Initialization:**
 - Automatically pushes initial_state to SharedState API during initialization (if provided)
@@ -807,7 +811,8 @@ await asyncio.to_thread(agent.server.load, serverThreadId="my_task_thread")  # S
 ```bash
 # StationAgent
 export SHARED_STATE_URL="https://your-api.amazonaws.com/prod"
-export SHARED_STATE_TOKEN="your-api-token"
+export SHARED_STATE_TOKEN="your-shared-state-api-token"
+export LANGGRAPH_TOKEN="your-langgraph-api-token"
 
 # HumanAgent
 export HITL_TOKEN="your-hitl-token"
@@ -820,7 +825,8 @@ export HITL_TOKEN="your-hitl-token"
 ```python
 config = {
     "configurable": {
-        "shared_state_token": "your-api-token",
+        "shared_state_token": "your-shared-state-api-token",
+        "langgraph_token": "your-langgraph-api-token",  # Required for uninterrupt functionality
         "hitl_token": "your-hitl-token", 
         "os_url": "https://your-windows-server.ngrok.app",
         "thread_id": "your-langgraph-thread-id"
