@@ -91,46 +91,36 @@ if [ ! -d ".git" ]; then
     exit 1
 fi
 
-# Check if bumpversion is installed
-if ! command -v bumpversion &> /dev/null; then
-    print_warning "bumpversion not found, installing..."
-    pip install bump2version
+# Check if bump-my-version is installed
+if ! command -v bump-my-version &> /dev/null; then
+    print_warning "bump-my-version not found, installing..."
+    pip install bump-my-version
 fi
 
-# Check for uncommitted changes
-if [ -n "$(git status --porcelain)" ]; then
-    print_status "Found uncommitted changes, staging all files..."
-    git add .
-    
-    print_status "Committing changes..."
-    git commit -m "$COMMIT_MESSAGE"
-    print_success "Changes committed successfully!"
-else
-    print_warning "No uncommitted changes found."
-fi
+# Add all current changes to git staging
+# This ensures they are included in the release commit
+print_status "Staging all uncommitted changes..."
+git add .
 
-# Get current version
-CURRENT_VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+# Get current version from the tool
+CURRENT_VERSION=$(bump-my-version show current_version)
 print_status "Current version: $CURRENT_VERSION"
 
-# Bump version
-print_status "Bumping version ($VERSION_TYPE)..."
-bumpversion "$VERSION_TYPE" --no-tag
+# Bump version, commit, and tag in one atomic operation
+# The commit will include all staged changes.
+print_status "Bumping version, committing staged changes, and creating tag..."
+bump-my-version bump "$VERSION_TYPE" --message "Release v{new_version}: $COMMIT_MESSAGE"
 
 # Get new version
-NEW_VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+NEW_VERSION=$(bump-my-version show new_version)
 print_success "Version bumped from $CURRENT_VERSION to $NEW_VERSION"
 
-# Push changes
-print_status "Pushing changes to remote repository..."
+# Push commit and tags to the remote repository
+print_status "Pushing commit and tags to remote repository..."
 git push origin main
+git push --tags
 
-# Create and push tag
-print_status "Creating and pushing version tag..."
-git tag "v$NEW_VERSION"
-git push origin "v$NEW_VERSION"
-
-print_success "Tag v$NEW_VERSION created and pushed!"
+print_success "Commit and tag v$NEW_VERSION pushed successfully!"
 
 # Check if gh CLI is available for creating release
 if command -v gh &> /dev/null; then
@@ -173,6 +163,8 @@ print_status "🎯 Next steps:"
 print_status "  1. Monitor GitHub Actions for release creation"
 print_status "  2. Verify PyPI deployment completes successfully"
 print_status "  3. Test the new version: pip install --upgrade cuteagent"
+
+echo ""
 
 echo ""
 print_status "You can monitor the deployment at:"
