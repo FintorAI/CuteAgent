@@ -705,12 +705,8 @@ class StationAgent:
             if reserved_found:
                 raise ValueError(f"Cannot set reserved variables: {reserved_found}. Reserved variables: {self.agent.RESERVED_VARIABLES}")
             
-            # Automatically add server and serverThread if not present
+            # Don't automatically add server variables - they should be explicitly managed
             variables = json_object.copy()
-            if "server" not in variables:
-                variables["server"] = "idle"  # Always default to valid "idle" status
-            if "serverThread" not in variables:
-                variables["serverThread"] = "idle"
                 
             data = {
                 "stationThread": self.agent.station_thread_id,
