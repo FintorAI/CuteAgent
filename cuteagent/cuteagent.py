@@ -1031,7 +1031,8 @@ class StationAgent:
         """
         print(f"Attempting to uninterrupt task: {task_type}")
         try:
-            from langgraph_sdk import get_sync_client, Command
+            from langgraph_sdk import get_sync_client
+            from langgraph_sdk.schema import Command
         except ImportError as e:
             error_message = f"Failed to import LangGraph SDK: {str(e)}"
             print(f"ERROR: {error_message}")
