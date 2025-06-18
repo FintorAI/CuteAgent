@@ -451,11 +451,11 @@ class StationAgent:
         self.state = self.State(self)
         self.server = self.Server(self)
         
-        # Push initial state to SharedState API if provided
+        # Handle initial state and server variable initialization
         if initial_state is not None:
             # Ensure initial_state includes server variables
             self.initial_state = initial_state.copy()
-            num_servers =  4  # Default number of servers
+            num_servers = 4  # Default number of servers
             if "server" not in self.initial_state:
                 self.initial_state["server"] = ["idle"] * num_servers
             if "serverThread" not in self.initial_state:
@@ -479,8 +479,35 @@ class StationAgent:
             else:
                 print(f"⚠️ StationAgent initialized but failed to push {len(self.initial_state)} variables to SharedState API")
         else:
+            # No initial state provided - check if server variables exist, if not initialize them
             self.initial_state = None
             print("🆕 StationAgent initialized with no initial state to push")
+            
+            # Check if server variables exist as arrays, if not initialize them
+            server_vars = self.state.get("server")
+            if server_vars is None or not isinstance(server_vars, list):
+                print("⚠️ Server variables not found or not arrays, initializing...")
+                num_servers = 4  # Default number of servers
+                server_initialization = {
+                    "server": ["idle"] * num_servers,
+                    "serverThread": ["idle"] * num_servers,
+                    "serverCheckpoint": ["setup"] * num_servers,
+                    "serverTaskType": ["taskPlaceholder"] * num_servers
+                }
+                
+                # Use direct API call to initialize server variables
+                data = {
+                    "stationThread": self.station_thread_id,
+                    "variables": server_initialization
+                }
+                
+                response = self._make_request("POST", "/shared-state/bulk-upsert", data=data)
+                if response and response.get("success", False):
+                    print("✅ Server variables initialized successfully")
+                else:
+                    print("❌ Failed to initialize server variables")
+            else:
+                print("✅ Server variables already exist as arrays")
     
     def _make_request(self, method: str, endpoint: str, params: Optional[Dict] = None, 
                      data: Optional[Dict] = None, max_retries: int = 3) -> Optional[Dict]:
