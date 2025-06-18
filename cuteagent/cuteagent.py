@@ -944,7 +944,7 @@ class StationAgent:
 
             return {"status": "loaded", "serverThread": serverThreadId}
 
-        def unload(self, checkpoint: str, index: int = 0) -> Dict:
+        def unload(self, checkpoint: str = "setup", index: int = 0) -> Dict:
             """
             Unload the server and set it to idle.
 

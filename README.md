@@ -715,36 +715,60 @@ var_names = await asyncio.to_thread(agent.state.list_variables)  # Returns list 
 ⚠️ **All server methods must be wrapped in `asyncio.to_thread()` when called from async LangGraph nodes. They now operate on a specific server via an index.**
 
 ### `agent.server.load(serverThreadId, serverCheckpoint="setup", serverIndex=0, serverTaskType="taskPlaceholder")`
-Load a specific server for a task.
+Load a specific server for a task. The server must be in "idle" status and have the expected checkpoint.
+
+**Parameters:**
+- `serverThreadId` (str): The thread ID to assign to the server when loaded
+- `serverCheckpoint` (str, optional): The checkpoint to verify before loading. Defaults to "setup"
+- `serverIndex` (int, optional): The index of the server to load (0-3). Defaults to 0
+- `serverTaskType` (str, optional): The task type to assign. Defaults to "taskPlaceholder"
 
 ```python
 result = await asyncio.to_thread(
     agent.server.load,
-    serverThreadId="thread-abc",
+    serverThreadId="GetNames",
     serverCheckpoint="setup",
     serverIndex=0,
     serverTaskType="data_processing"
 )
-# Returns: {"status": "loaded", "serverThread": "thread-abc"} 
+# Returns: {"status": "loaded", "serverThread": "GetNames"} 
 # or {"status": "busy", "error": "Server is busy"}
-# or {"status": "wrongCheckpoint", "error": "..."}
+# or {"status": "wrongCheckpoint", "error": "Incorrect checkpoint. Expected setup, got running"}
+# or {"status": "error", "error": "serverIndex 0 is out of bounds."}
 ```
 
-### `agent.server.unload(checkpoint, index=0)`
-Unload a server and set it to idle with a new checkpoint.
+### `agent.server.unload(checkpoint="setup", index=0)`
+Unload a server and set it to idle with a new checkpoint. The server must be in "busy" status.
+
+**Parameters:**
+- `checkpoint` (str, optional): The checkpoint to set after unloading. Defaults to "setup"
+- `index` (int, optional): The index of the server to unload (0-3). Defaults to 0
 
 ```python
 result = await asyncio.to_thread(agent.server.unload, checkpoint="completed", index=0)
+# With default checkpoint:
+result = await asyncio.to_thread(agent.server.unload, index=0)  # Uses "setup" as default
+
 # Returns: {"status": "unloaded"}
 #       or {"status": "idle", "error": "Server is already idle"}
+#       or {"status": "error", "error": "serverIndex 0 is out of bounds."}
 ```
 
 ### `agent.server.avail(index=0)`
 Get availability status for a specific server.
 
+**Parameters:**
+- `index` (int, optional): The index of the server to check (0-3). Defaults to 0
+
 ```python
 status = await asyncio.to_thread(agent.server.avail, index=0)
-# Returns: {"server": "busy|idle", "serverThread": "...", "serverCheckpoint": "...", "serverTaskType": "..."}
+# Returns: {
+#     "server": "busy|idle", 
+#     "serverThread": "GetNames|idle", 
+#     "serverCheckpoint": "setup|running|completed", 
+#     "serverTaskType": "data_processing|taskPlaceholder"
+# }
+# or {"status": "error", "error": "Server state is not initialized correctly as arrays."}
 ```
 
 ## Task Management Methods
@@ -752,34 +776,69 @@ status = await asyncio.to_thread(agent.server.avail, index=0)
 ### `agent.uninterrupt(task_type)`
 Resume an interrupted LangGraph execution for a given task type.
 
-This method retrieves the thread ID, LangGraph URL, and assistant ID from shared state based on the task_type, then sends a resume command to the LangGraph instance with `{"nextStep": "proceed"}`.
+This method retrieves the thread ID, LangGraph URL, and assistant ID from shared state based on the task_type, then sends a resume command to the LangGraph instance with `{"nextStep": "proceed"}`. **Requires `langgraph_token` to be provided during StationAgent initialization.**
 
-```python
-result = await asyncio.to_thread(agent.uninterrupt, "main_workflow")
-# Returns: {"success": True, "thread_id": "...", "task_type": "...", "message": "Successfully resumed station execution", "response_preview": "..."}
-#       or {"success": False, "error": "Missing required state variables: main_workflow_thread_id, main_workflow_URL, main_workflow_Assistant"}
-```
+**Parameters:**
+- `task_type` (str): The type of task to uninterrupt (used to build variable names)
 
 **Required State Variables:**
 - `{task_type}_thread_id`: The LangGraph thread ID to resume
-- `{task_type}_URL`: The LangGraph server URL
+- `{task_type}_URL`: The LangGraph server URL  
 - `{task_type}_Assistant`: The LangGraph assistant ID
 
-**Example Setup:**
+**Required Initialization:**
+- `langgraph_token`: Must be provided when creating StationAgent
+
 ```python
-# First, set up the required state variables for your task type
+# Initialize StationAgent with LangGraph token
+agent = await asyncio.to_thread(
+    StationAgent,
+    station_thread_id="workflow-123",
+    graph_thread_id="thread-456", 
+    token="shared-state-token",
+    langgraph_token="langgraph-api-token"  # Required for uninterrupt
+)
+
+# Set up the required state variables for your task type
 await asyncio.to_thread(agent.state.push, {
     "main_workflow_thread_id": "thread-abc-123",
     "main_workflow_URL": "https://your-langgraph-server.com",
     "main_workflow_Assistant": "asst_xyz789"
 })
 
-# Then you can uninterrupt the workflow
+# Resume the interrupted workflow
 result = await asyncio.to_thread(agent.uninterrupt, "main_workflow")
+
+# Handle the result
 if result["success"]:
-    print(f"Successfully resumed workflow: {result['thread_id']}")
+    print(f"✅ Successfully resumed workflow: {result['thread_id']}")
+    print(f"Task type: {result['task_type']}")
+    print(f"Response preview: {result['response_preview']}")
 else:
-    print(f"Failed to resume: {result['error']}")
+    print(f"❌ Failed to resume: {result['error']}")
+```
+
+**Return Values:**
+```python
+# Success:
+{
+    "success": True,
+    "thread_id": "thread-abc-123",
+    "task_type": "main_workflow", 
+    "message": "Successfully resumed station execution",
+    "response_preview": "First 200 chars of LangGraph response..."
+}
+
+# Failure:
+{
+    "success": False,
+    "error": "Missing required state variables: main_workflow_thread_id, main_workflow_URL, main_workflow_Assistant"
+}
+# or
+{
+    "success": False,
+    "error": "LangGraph token is required for uninterrupt functionality. Please provide langgraph_token when initializing StationAgent."
+}
 ```
 
 ## 🔒 Reserved Variables
