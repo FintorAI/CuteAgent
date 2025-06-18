@@ -423,7 +423,7 @@ class StationAgent:
     # Valid server status values
     VALID_SERVER_STATUS = {"busy", "idle"}
     
-    def __init__(self, station_thread_id: str, graph_thread_id: str, token: str, shared_state_url: str = SHARED_STATE_URL):
+    def __init__(self, station_thread_id: str, graph_thread_id: str, token: str, initial_state: Optional[Dict[str, Any]] = None):
         """
         Initialize the StationAgent with thread IDs and authentication token.
         
@@ -431,12 +431,12 @@ class StationAgent:
             station_thread_id (str): Identifier for the station/workflow instance
             graph_thread_id (str): LangGraph thread identifier
             token (str): Authentication token for API access
-            shared_state_url (str): Base URL for the SharedState API. Defaults to SHARED_STATE_URL.
+            initial_state (dict, optional): Initial state object to push to SharedState API. Defaults to None.
         """
         self.station_thread_id = station_thread_id
         self.graph_thread_id = graph_thread_id
         self.token = token
-        self.base_url = shared_state_url
+        self.base_url = SHARED_STATE_URL
         
         # Set up HTTP session with authentication
         self.session = requests.Session()
@@ -449,12 +449,31 @@ class StationAgent:
         self.state = self.State(self)
         self.server = self.Server(self)
         
-        # Get initial state from SharedState API
-        self.initial_state = self.state.pull()
-        if self.initial_state:
-            print(f"🔄 StationAgent initialized with {len(self.initial_state)} existing variables from SharedState API")
+        # Push initial state to SharedState API if provided
+        if initial_state is not None:
+            # Ensure initial_state includes server variables
+            self.initial_state = initial_state.copy()
+            if "server" not in self.initial_state:
+                self.initial_state["server"] = "idle"
+            if "serverThread" not in self.initial_state:
+                self.initial_state["serverThread"] = "idle"
+                
+            # Use direct API call during initialization to bypass reserved variable protection
+            data = {
+                "stationThread": self.station_thread_id,
+                "variables": self.initial_state
+            }
+            
+            response = self._make_request("POST", "/shared-state/bulk-upsert", data=data)
+            push_result = response is not None and response.get("success", False)
+            
+            if push_result:
+                print(f"🚀 StationAgent initialized and pushed {len(self.initial_state)} variables to SharedState API")
+            else:
+                print(f"⚠️ StationAgent initialized but failed to push {len(self.initial_state)} variables to SharedState API")
         else:
-            print("🆕 StationAgent initialized with empty state - no existing variables found")
+            self.initial_state = None
+            print("🆕 StationAgent initialized with no initial state to push")
     
     def _make_request(self, method: str, endpoint: str, params: Optional[Dict] = None, 
                      data: Optional[Dict] = None, max_retries: int = 3) -> Optional[Dict]:

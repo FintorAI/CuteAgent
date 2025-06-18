@@ -26,63 +26,67 @@ class TestStationAgentMock(unittest.TestCase):
         self.test_station_id = "test-station-456"
         self.test_graph_id = "test-graph-789"
         
-        # Mock the initial state pull during initialization
+        # Mock the initial state push during initialization
         with patch('requests.Session.request') as mock_request:
-            # Mock the initial state pull response
+            # Mock the initial state push response
             mock_response = Mock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "success": True,
-                "attributes": {
-                    "server": "idle",
-                    "serverThread": "idle"
-                }
-            }
+            mock_response.json.return_value = {"success": True}
             mock_request.return_value = mock_response
             
-            # Create agent without making real requests
+            # Create agent with initial state
+            initial_state = {
+                "testVar": "testValue",
+                "workflowStep": "initialized"
+            }
             self.agent = StationAgent(
                 station_thread_id=self.test_station_id,
                 graph_thread_id=self.test_graph_id,
-                token=self.test_token
+                token=self.test_token,
+                initial_state=initial_state
             )
+            
+            # Note: agent.initial_state will include server and serverThread automatically
     
     @patch('requests.Session.request')
     def test_initialization(self, mock_request):
         """Test StationAgent initialization."""
-        # Mock the initial state pull response
+        # Mock the initial state push response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "success": True,
-            "attributes": {
-                "server": "idle",
-                "serverThread": "idle",
-                "existingVar": "existingValue"
-            }
-        }
+        mock_response.json.return_value = {"success": True}
         mock_request.return_value = mock_response
         
-        # Test basic initialization
+        # Test basic initialization without initial state
         agent = StationAgent("station-1", "graph-1", "token-1")
         self.assertEqual(agent.station_thread_id, "station-1")
         self.assertEqual(agent.graph_thread_id, "graph-1")
         self.assertEqual(agent.token, "token-1")
         
-        # Test that initial state was pulled
-        self.assertIsNotNone(agent.initial_state)
-        self.assertEqual(agent.initial_state["server"], "idle")
-        self.assertEqual(agent.initial_state["serverThread"], "idle")
-        self.assertEqual(agent.initial_state["existingVar"], "existingValue")
+        # Test that initial state is None when not provided
+        self.assertIsNone(agent.initial_state)
         
-        # Verify the pull request was made during initialization
+        # Test with initial state
+        mock_request.reset_mock()
+        initial_state = {
+            "workflowId": "workflow-123",
+            "currentStep": "start",
+            "userData": {"name": "test"}
+        }
+        agent_with_state = StationAgent("station-1", "graph-1", "token-1", initial_state=initial_state)
+        
+        # Check that server variables were automatically added to initial_state
+        expected_state = initial_state.copy()
+        expected_state["server"] = "idle"
+        expected_state["serverThread"] = "idle"
+        self.assertEqual(agent_with_state.initial_state, expected_state)
+        
+        # Verify the push request was made during initialization
         mock_request.assert_called()
         
-        # Test custom URL
-        mock_request.reset_mock()
-        custom_url = "https://custom-api.example.com"
-        agent = StationAgent("station-1", "graph-1", "token-1", shared_state_url=custom_url)
-        self.assertEqual(agent.base_url, custom_url)
+        # Test default URL is used
+        from cuteagent.cuteagent import SHARED_STATE_URL
+        self.assertEqual(agent.base_url, SHARED_STATE_URL)
         
         # Test reserved variables
         self.assertEqual(StationAgent.RESERVED_VARIABLES, {"server", "serverThread"})
@@ -95,34 +99,53 @@ class TestStationAgentMock(unittest.TestCase):
     @patch('requests.Session.request')
     def test_initialization_empty_state(self, mock_request):
         """Test StationAgent initialization with empty initial state."""
-        # Mock empty initial state response
+        # Mock successful push response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "success": True,
-            "attributes": {}
-        }
+        mock_response.json.return_value = {"success": True}
         mock_request.return_value = mock_response
         
-        agent = StationAgent("station-1", "graph-1", "token-1")
+        # Test with empty initial state dict
+        agent = StationAgent("station-1", "graph-1", "token-1", initial_state={})
         
-        # Test that initial state is empty dict
-        self.assertEqual(agent.initial_state, {})
+        # Test that initial state has server variables added to empty dict
+        expected_state = {"server": "idle", "serverThread": "idle"}
+        self.assertEqual(agent.initial_state, expected_state)
         self.assertIsInstance(agent.initial_state, dict)
+        
+        # Verify push was called during initialization (even for empty dict)
+        # The API should still be called to push the empty state + server defaults
+        mock_request.assert_called()
+        
+        # Check that the last call was a POST to bulk-upsert with server defaults
+        last_call = mock_request.call_args
+        self.assertEqual(last_call[1]['method'], 'POST')
+        self.assertIn('/shared-state/bulk-upsert', last_call[1]['url'])
+        
+        # Check that server defaults were added to empty dict
+        request_data = last_call[1]['json']
+        self.assertIn('variables', request_data)
+        variables = request_data['variables']
+        self.assertEqual(variables['server'], 'idle')
+        self.assertEqual(variables['serverThread'], 'idle')
     
     @patch('requests.Session.request')
     def test_initialization_api_failure(self, mock_request):
         """Test StationAgent initialization handles API failure gracefully."""
-        # Mock API failure response
+        # Mock API failure response for push
         mock_response = Mock()
         mock_response.status_code = 500
         mock_response.json.return_value = {"success": False}
         mock_request.return_value = mock_response
         
-        agent = StationAgent("station-1", "graph-1", "token-1")
+        initial_state = {"testVar": "testValue"}
+        agent = StationAgent("station-1", "graph-1", "token-1", initial_state=initial_state)
         
-        # Should handle failure gracefully with empty initial state
-        self.assertEqual(agent.initial_state, {})
+        # Should handle failure gracefully, keeping the initial state with server variables added
+        expected_state = initial_state.copy()
+        expected_state["server"] = "idle"
+        expected_state["serverThread"] = "idle"
+        self.assertEqual(agent.initial_state, expected_state)
         self.assertIsNotNone(agent.state)
         self.assertIsNotNone(agent.server)
     
@@ -419,22 +442,22 @@ class TestStationAgentIntegration(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        # Mock the initial state pull during initialization
+        # Mock the initial state push during initialization
         with patch('requests.Session.request') as mock_request:
-            # Mock the initial state pull response
+            # Mock the initial state push response
             mock_response = Mock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "success": True,
-                "attributes": {
-                    "server": "idle",
-                    "serverThread": "idle",
-                    "currentStep": "ready"
-                }
-            }
+            mock_response.json.return_value = {"success": True}
             mock_request.return_value = mock_response
             
-            self.agent = StationAgent("workflow-1", "graph-1", "token")
+            # Create agent with initial workflow state
+            initial_state = {
+                "currentStep": "ready",
+                "workflowId": "workflow-123"
+            }
+            self.agent = StationAgent("workflow-1", "graph-1", "token", initial_state=initial_state)
+            
+            # Note: agent.initial_state will include server and serverThread automatically
     
     @patch.object(StationAgent, '_make_request')
     @patch.object(StationAgent.State, 'get')

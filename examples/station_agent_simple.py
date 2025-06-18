@@ -35,21 +35,25 @@ async def initialization_node(state: SimpleState, config: RunnableConfig) -> Sim
     
     configuration = config["configurable"]
     
-    # Initialize StationAgent - automatically pulls existing shared state
+    # Initialize StationAgent with initial state
+    initial_workflow_state = {
+        "workflowType": "simple_example",
+        "startTime": "2024-01-01T12:00:00Z",
+        "initialized": True,
+        "nodeSequence": []
+    }
+    
     agent = StationAgent(
         station_thread_id=state.stationThreadId or "simple-workflow",
         graph_thread_id=configuration.get("thread_id"),
-        token=configuration.get("shared_state_token", "dev-token-123")
+        token=configuration.get("shared_state_token", "dev-token-123"),
+        initial_state=initial_workflow_state
     )
     
-    # Check what initial state was loaded
+    # Check what initial state was pushed (automatically includes server and serverThread)
     if agent.initial_state:
-        print(f"Found {len(agent.initial_state)} existing variables: {list(agent.initial_state.keys())}")
-    
-    # Set initial shared state
-    agent.state.set("workflowType", "simple_example")
-    agent.state.set("startTime", "2024-01-01T12:00:00Z")
-    agent.state.set("initialized", True)
+        print(f"Pushed {len(agent.initial_state)} initial variables: {list(agent.initial_state.keys())}")
+        print(f"Server status: {agent.initial_state.get('server')}, Server thread: {agent.initial_state.get('serverThread')}")
     
     # Sync shared state to local state
     state = agent.state.sync_all(state)
@@ -194,12 +198,22 @@ async def demonstrate_station_agent_features():
     
     print("🧪 Demonstrating StationAgent features...")
     
-    # Create agent for demonstrations
+    # Create agent for demonstrations with initial demo state
+    demo_initial_state = {
+        "demo_initialized": True,
+        "demo_version": "1.0",
+        "demo_features": ["state_management", "server_coordination", "variable_protection"]
+    }
+    
     agent = StationAgent(
         station_thread_id="demo-station",
         graph_thread_id="demo-graph",
-        token="dev-token-123"
+        token="dev-token-123",
+        initial_state=demo_initial_state
     )
+    
+    print(f"Demo initialized with state: {list(agent.initial_state.keys())}")
+    print(f"Initial server status: {agent.initial_state.get('server')}, thread: {agent.initial_state.get('serverThread')}")
     
     # 1. Basic variable operations
     print("\n1️⃣ Basic Variable Operations:")

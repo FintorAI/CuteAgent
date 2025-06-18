@@ -58,9 +58,8 @@ config = RunnableConfig({
         # Thread management
         "thread_id": "workflow-thread-123",
         
-        # StationAgent
+        # StationAgent (uses default SharedState API URL)
         "shared_state_token": "your-api-token",
-        "shared_state_url": "https://your-api.amazonaws.com/prod",  # Optional
         
         # HumanAgent
         "hitl_token": "your-hitl-token",
@@ -92,13 +91,19 @@ async def workflow_start_node(state: WorkflowState, config: RunnableConfig) -> W
     configuration = config["configurable"]
     
     # 1. Initialize StationAgent for shared state management
-    # This automatically pulls existing shared state from the API
+    # Initialize with workflow state (server variables added automatically)
+    initial_workflow_state = {
+        "workflowType": "document_processing",
+        "startTime": "2024-01-01T12:00:00Z",
+        "workflowStatus": "initializing"
+    }
     station_agent = StationAgent(
         station_thread_id=state.stationThreadId or "document-workflow",
         graph_thread_id=configuration.get("thread_id"),
-        token=configuration.get("shared_state_token")
+        token=configuration.get("shared_state_token"),
+        initial_state=initial_workflow_state
     )
-    # Agent now has station_agent.initial_state with any existing variables
+    # Agent now has station_agent.initial_state with server variables and workflow state
     
     # 2. Extract stationThreadId from user input if provided
     if state.user_input:
@@ -148,7 +153,7 @@ async def computer_automation_node(state: WorkflowState, config: RunnableConfig)
     """Perform computer use tasks with WindowsAgent."""
     configuration = config["configurable"]
     
-    # 1. Initialize StationAgent for coordination
+    # 1. Initialize StationAgent for coordination (without initial state since we're continuing workflow)
     station_agent = StationAgent(
         station_thread_id=state.stationThreadId,
         graph_thread_id=configuration.get("thread_id"),

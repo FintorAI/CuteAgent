@@ -46,13 +46,21 @@ class StationAgentRealTester:
     def setup_agent(self):
         """Create a StationAgent instance for testing."""
         try:
+            # Create agent with initial test state
+            initial_state = {
+                "dev_testSetup": "initialized",
+                "dev_testTimestamp": str(time.time()),
+                "dev_stationId": self.test_station_id
+            }
             self.agent = StationAgent(
                 station_thread_id=self.test_station_id,
                 graph_thread_id=self.test_graph_id,
                 token=self.token,
-                shared_state_url=self.api_url
+                initial_state=initial_state
             )
-            self.log_test("Agent Setup", True, "StationAgent created successfully")
+            # Track the variables we created for cleanup
+            self.created_variables.extend(["dev_testSetup", "dev_testTimestamp", "dev_stationId"])
+            self.log_test("Agent Setup", True, "StationAgent created successfully with initial state")
             return True
         except Exception as e:
             self.log_test("Agent Setup", False, f"Failed to create agent: {e}")
@@ -77,13 +85,20 @@ class StationAgentRealTester:
         
         # Test basic properties
         try:
+            from cuteagent.cuteagent import SHARED_STATE_URL
             passed = (
                 self.agent.station_thread_id == self.test_station_id and
                 self.agent.graph_thread_id == self.test_graph_id and
                 self.agent.token == self.token and
-                self.agent.base_url == self.api_url
+                self.agent.base_url == SHARED_STATE_URL and
+                self.agent.initial_state is not None and
+                "dev_testSetup" in self.agent.initial_state and
+                "server" in self.agent.initial_state and
+                "serverThread" in self.agent.initial_state and
+                self.agent.initial_state["server"] == "idle" and
+                self.agent.initial_state["serverThread"] == "idle"
             )
-            self.log_test("Property Assignment", passed, "All properties set correctly")
+            self.log_test("Property Assignment", passed, "All properties set correctly and initial state pushed")
         except Exception as e:
             self.log_test("Property Assignment", False, f"Property check failed: {e}")
         
@@ -105,7 +120,7 @@ class StationAgentRealTester:
         
         # Test 1: Set a regular variable
         try:
-            test_var = "testVariable"
+            test_var = "dev_testVariable"
             test_value = "testValue123"
             result = self.agent.state.set(test_var, test_value)
             self.created_variables.append(test_var)
@@ -123,7 +138,7 @@ class StationAgentRealTester:
         
         # Test 3: Get non-existent variable
         try:
-            result = self.agent.state.get("nonExistentVariable12345")
+            result = self.agent.state.get("dev_nonExistentVariable12345")
             passed = result is None
             self.log_test("Get Non-existent Variable", passed, f"Non-existent variable returned: {result}")
         except Exception as e:
@@ -141,13 +156,13 @@ class StationAgentRealTester:
         # Test 5: Push operation with valid variables
         try:
             test_data = {
-                "userVar1": "value1",
-                "userVar2": {"nested": "value", "count": 42},
-                "userVar3": [1, 2, 3, "four"],
-                "userVar4": True
+                "dev_userVar1": "value1",
+                "dev_userVar2": {"nested": "value", "count": 42},
+                "dev_userVar3": [1, 2, 3, "four"],
+                "dev_userVar4": True
             }
             result = self.agent.state.push(test_data)
-            self.created_variables.extend(["userVar1", "userVar2", "userVar3", "userVar4", "server", "serverThread"])
+            self.created_variables.extend(["dev_userVar1", "dev_userVar2", "dev_userVar3", "dev_userVar4", "server", "serverThread"])
             self.log_test("Push Valid Variables", result, f"Push operation returned: {result}")
         except Exception as e:
             self.log_test("Push Valid Variables", False, f"Push operation failed: {e}")
@@ -155,7 +170,7 @@ class StationAgentRealTester:
         # Test 6: Verify push worked by pulling all variables
         try:
             all_vars = self.agent.state.pull()
-            expected_vars = ["userVar1", "userVar2", "userVar3", "userVar4", "server", "serverThread"]
+            expected_vars = ["dev_userVar1", "dev_userVar2", "dev_userVar3", "dev_userVar4", "server", "serverThread"]
             found_vars = [var for var in expected_vars if var in all_vars]
             passed = len(found_vars) >= 4  # At least our user variables should be there
             self.log_test("Pull All Variables", passed, f"Found {len(found_vars)}/{len(expected_vars)} expected vars. Total vars: {len(all_vars)}")
@@ -174,7 +189,7 @@ class StationAgentRealTester:
         
         # Test 8: Test sync operation
         try:
-            result = self.agent.state.sync("userVar1")
+            result = self.agent.state.sync("dev_userVar1")
             passed = result == "value1"
             self.log_test("Sync Variable", passed, f"Sync returned: {result}")
         except Exception as e:
@@ -182,8 +197,8 @@ class StationAgentRealTester:
         
         # Test 9: Test exists operation
         try:
-            exists_result = self.agent.state.exists("userVar1")
-            not_exists_result = self.agent.state.exists("nonExistentVar999")
+            exists_result = self.agent.state.exists("dev_userVar1")
+            not_exists_result = self.agent.state.exists("dev_nonExistentVar999")
             passed = exists_result and not not_exists_result
             self.log_test("Variable Exists Check", passed, f"Exists: {exists_result}, Not exists: {not_exists_result}")
         except Exception as e:
@@ -199,7 +214,7 @@ class StationAgentRealTester:
         
         # Test 11: Test delete operation
         try:
-            delete_var = "userVar4"
+            delete_var = "dev_userVar4"
             result = self.agent.state.delete(delete_var)
             # Verify deletion
             verify_result = self.agent.state.get(delete_var)
@@ -289,7 +304,7 @@ class StationAgentRealTester:
         
         # Test 1: Set up a test thread ID
         try:
-            task_type = "test_workflow"
+            task_type = "dev_test_workflow"
             thread_var = f"{task_type}_thread_id"
             thread_value = f"thread-{uuid.uuid4()}"
             
@@ -305,7 +320,7 @@ class StationAgentRealTester:
         
         # Test 2: Test uninterrupt with non-existent thread ID
         try:
-            result = self.agent.uninterrupt("nonexistent_workflow")
+            result = self.agent.uninterrupt("dev_nonexistent_workflow")
             expected_error = "error" in result and "not found" in result["error"].lower()
             self.log_test("Uninterrupt Without Thread ID", expected_error, f"Uninterrupt for non-existent: {result}")
         except Exception as e:
@@ -323,10 +338,10 @@ class StationAgentRealTester:
         try:
             # Step 1: Initialize workflow state (no reserved variables)
             workflow_state = {
-                "workflowId": str(uuid.uuid4()),
-                "currentNode": "start",
-                "userInput": "Process this data",
-                "context": {"session_id": "session_123"}
+                "dev_workflowId": str(uuid.uuid4()),
+                "dev_currentNode": "start",
+                "dev_userInput": "Process this data",
+                "dev_context": {"session_id": "session_123"}
             }
             
             result1 = self.agent.state.push(workflow_state)
@@ -337,14 +352,14 @@ class StationAgentRealTester:
             server_loaded = load_result.get("status") in ["loaded", "busy"]
             
             # Step 3: Update progress
-            progress_result = self.agent.state.set("progress", 0.5)
-            self.created_variables.append("progress")
+            progress_result = self.agent.state.set("dev_progress", 0.5)
+            self.created_variables.append("dev_progress")
             
             # Step 4: Pull all state (simulate LangGraph node accessing shared state)
             all_state = self.agent.state.pull()
             
             # Step 5: Complete workflow
-            completion_result = self.agent.state.set("currentNode", "completed")
+            completion_result = self.agent.state.set("dev_currentNode", "completed")
             
             # Step 6: Unload server (this should manage reserved variables)
             unload_result = self.agent.server.unload()
@@ -362,7 +377,7 @@ class StationAgentRealTester:
             if completion_result: successful_ops += 1
             if server_loaded: successful_ops += 1
             if server_unloaded: successful_ops += 1
-            if final_state and "workflowId" in final_state: successful_ops += 1
+            if final_state and "dev_workflowId" in final_state: successful_ops += 1
             
             # Pass if at least 4 out of 6 operations succeeded (allowing for some API failures)
             passed = successful_ops >= 4
@@ -380,12 +395,12 @@ class StationAgentRealTester:
             server_status = self.agent.server.avail()
             
             # Try to interrupt current workflow
-            interrupt_data = {"interrupt_workflow_thread_id": self.test_graph_id}
+            interrupt_data = {"dev_interrupt_workflow_thread_id": self.test_graph_id}
             self.agent.state.push(interrupt_data)
-            self.created_variables.append("interrupt_workflow_thread_id")
+            self.created_variables.append("dev_interrupt_workflow_thread_id")
             
             # Test resuming from interruption
-            resume_result = self.agent.uninterrupt("interrupt_workflow")
+            resume_result = self.agent.uninterrupt("dev_interrupt_workflow")
             
             passed = (
                 isinstance(server_status, dict) and
@@ -420,12 +435,12 @@ class StationAgentRealTester:
                 }
             }
             
-            result = self.agent.state.set("complexData", complex_data)
+            result = self.agent.state.set("dev_complexData", complex_data)
             
             if result:
-                self.created_variables.append("complexData")
+                self.created_variables.append("dev_complexData")
                 # Retrieve and verify
-                retrieved = self.agent.state.get("complexData")
+                retrieved = self.agent.state.get("dev_complexData")
                 passed = retrieved is not None
                 self.log_test("Complex Data Types", passed, f"Set complex data: {result}, retrieved: {type(retrieved)}")
             else:
@@ -438,10 +453,10 @@ class StationAgentRealTester:
         # Test 2: Test edge case variable names
         try:
             edge_cases = [
-                ("var_with_underscore", "value1"),
-                ("var-with-dash", "value2"),
-                ("var123", "value3"),
-                ("CamelCaseVar", "value4")
+                ("dev_var_with_underscore", "value1"),
+                ("dev_var-with-dash", "value2"),
+                ("dev_var123", "value3"),
+                ("dev_CamelCaseVar", "value4")
             ]
             
             success_count = 0

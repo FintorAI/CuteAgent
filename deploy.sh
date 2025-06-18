@@ -79,6 +79,43 @@ else
     print_warning "No uncommitted changes found."
 fi
 
+# Run full test suite before deployment
+print_status "Running comprehensive test suite..."
+print_status "This ensures code quality before deployment. Deployment will stop if tests fail."
+echo ""
+
+# Check if tests directory exists
+if [ ! -d "tests" ]; then
+    print_error "Tests directory not found! Cannot validate code before deployment."
+    print_error "Please ensure tests/ directory exists with test files."
+    exit 1
+fi
+
+# Run mock tests first (fast validation)
+print_status "🧪 Step 1/2: Running mock tests (fast validation)..."
+if ! python tests/run_tests.py mock; then
+    print_error "❌ Mock tests failed! Deployment aborted."
+    print_error "Please fix the failing tests before deploying."
+    exit 1
+fi
+print_success "✅ Mock tests passed!"
+
+# Run real API tests (comprehensive validation)
+print_status "🧪 Step 2/2: Running real API tests (comprehensive validation)..."
+if ! python tests/run_tests.py real dev-token-123; then
+    print_error "❌ Real API tests failed! Deployment aborted."
+    print_error "Please fix the failing tests or check API connectivity before deploying."
+    exit 1
+fi
+print_success "✅ All tests passed! Code is ready for deployment."
+
+echo ""
+print_success "🎯 Test validation completed successfully!"
+print_status "✅ Mock tests: PASSED"
+print_status "✅ Real API tests: PASSED"
+print_status "Proceeding with version bump and deployment..."
+echo ""
+
 # Get current version
 CURRENT_VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
 print_status "Current version: $CURRENT_VERSION"
@@ -130,6 +167,7 @@ fi
 
 print_success "🚀 Deployment completed successfully!"
 print_status "Summary:"
+print_status "  - Tests: ✅ All passed (Mock + Real API)"
 print_status "  - Committed: $COMMIT_MESSAGE"
 print_status "  - Version: $CURRENT_VERSION → $NEW_VERSION"
 print_status "  - Tag: v$NEW_VERSION"

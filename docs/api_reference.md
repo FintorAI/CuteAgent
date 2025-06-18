@@ -12,23 +12,44 @@ StationAgent provides shared state management and server coordination for LangGr
 
 ## Constructor
 
-### `StationAgent(station_thread_id, graph_thread_id, token, shared_state_url=None)`
+### `StationAgent(station_thread_id, graph_thread_id, token, initial_state=None)`
 
-Initialize a new StationAgent instance.
+Initialize a new StationAgent instance with optional initial state.
 
 **Parameters:**
 - `station_thread_id` (str): Unique identifier for the station/workflow instance
 - `graph_thread_id` (str): LangGraph thread identifier from config
 - `token` (str): Bearer token for SharedState API authentication
-- `shared_state_url` (str, optional): Custom API URL. Defaults to global `SHARED_STATE_URL`
+- `initial_state` (dict, optional): Initial state to push to SharedState API. Automatically includes `server` and `serverThread` variables (both set to "idle")
+
+**Attributes:**
+- `agent.initial_state` (dict): Enhanced initial state with server variables automatically added
 
 **Example:**
 ```python
+# Initialize without initial state
 agent = StationAgent(
     station_thread_id="workflow-instance-1",
     graph_thread_id=config["thread_id"],
     token="dev-token-123"
 )
+
+# Initialize with initial state (server variables added automatically)
+initial_workflow_state = {
+    "workflowId": "wf-123",
+    "currentStep": "start",
+    "userInput": "process this data"
+}
+agent = StationAgent(
+    station_thread_id="workflow-instance-1",
+    graph_thread_id=config["thread_id"],
+    token="dev-token-123",
+    initial_state=initial_workflow_state
+)
+
+# Check what was automatically enhanced
+print(f"Initial variables: {list(agent.initial_state.keys())}")
+# Output: ['workflowId', 'currentStep', 'userInput', 'server', 'serverThread']
 ```
 
 ---

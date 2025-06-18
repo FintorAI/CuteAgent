@@ -412,11 +412,17 @@ async def complete_workflow_node(state: WorkflowState, config) -> WorkflowState:
     """Complete workflow using all three agents."""
     configuration = config["configurable"]
     
-    # 1. Initialize StationAgent for coordination
+    # 1. Initialize StationAgent for coordination with initial workflow state
+    initial_workflow_state = {
+        "workflowType": "complete_multi_agent",
+        "startTime": "2024-01-01T12:00:00Z",
+        "workflowStatus": "active"
+    }
     station_agent = StationAgent(
         station_thread_id=state.stationThreadId or "main-workflow",
         graph_thread_id=configuration.get("thread_id"),
-        token=configuration.get("shared_state_token")
+        token=configuration.get("shared_state_token"),
+        initial_state=initial_workflow_state
     )
     
     # 2. Sync shared state to get latest workflow data
@@ -517,33 +523,45 @@ This example demonstrates how all three agents work together:
 
 ## Constructor and Initialization
 
-### `StationAgent(station_thread_id, graph_thread_id, token, shared_state_url=None)`
+### `StationAgent(station_thread_id, graph_thread_id, token, initial_state=None)`
 
-Create a new StationAgent instance with automatic state initialization.
+Create a new StationAgent instance with initial state push capability.
 
 **Parameters:**
 - `station_thread_id` (str): Identifier for the station/workflow instance
 - `graph_thread_id` (str): LangGraph thread identifier  
 - `token` (str): Authentication token for SharedState API
-- `shared_state_url` (str, optional): Custom API URL (defaults to global URL)
+- `initial_state` (dict, optional): Initial state object to push to SharedState API
 
 **Automatic Initialization:**
-- Automatically pulls existing shared state from API during initialization
-- Stores result in `agent.initial_state` attribute for easy access
-- Provides console feedback about loaded variables
+- Automatically pushes initial_state to SharedState API during initialization (if provided)
+- Automatically adds `server` and `serverThread` variables to initial_state (both set to "idle")
+- Stores enhanced initial_state in `agent.initial_state` attribute for easy access
+- Provides console feedback about pushed variables
 
 **Attributes:**
-- `agent.initial_state` (dict): Dictionary of all variables loaded during initialization
+- `agent.initial_state` (dict): Dictionary of initial state with server variables automatically added
 
 **Example:**
 ```python
-# Initialize agent - automatically loads existing state
-agent = StationAgent("workflow-123", "thread-456", "token")
+# Initialize agent with initial state
+initial_workflow_state = {
+    "workflowId": "wf-123",
+    "currentStep": "start",
+    "userInput": "process this data"
+}
+agent = StationAgent("workflow-123", "thread-456", "token", initial_state=initial_workflow_state)
 
-# Check what was loaded
-print(f"Loaded variables: {list(agent.initial_state.keys())}")
-if "workflowStatus" in agent.initial_state:
-    print(f"Existing status: {agent.initial_state['workflowStatus']}")
+# Check what was automatically enhanced (server variables added)
+print(f"Initial variables: {list(agent.initial_state.keys())}")
+# Output: ['workflowId', 'currentStep', 'userInput', 'server', 'serverThread']
+print(f"Workflow ID: {agent.initial_state['workflowId']}")
+print(f"Server status: {agent.initial_state['server']}")  # "idle"
+print(f"Server thread: {agent.initial_state['serverThread']}")  # "idle"
+
+# Initialize without initial state
+agent_empty = StationAgent("workflow-456", "thread-789", "token")
+print(f"No initial state: {agent_empty.initial_state}")  # None
 ```
 
 ## State Management Methods
