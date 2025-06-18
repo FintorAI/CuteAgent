@@ -659,6 +659,20 @@ class StationAgent:
             if variable_name in self.agent.RESERVED_VARIABLES:
                 raise ValueError(f"Cannot set reserved variable '{variable_name}'. Reserved variables: {self.agent.RESERVED_VARIABLES}")
             
+            return self._set_internal(variable_name, variable_value)
+        
+        def _set_internal(self, variable_name: str, variable_value: Any) -> bool:
+            """
+            Internal method to set variables without reserved variable protection.
+            Used by server management methods to update server variables.
+            
+            Args:
+                variable_name (str): Name of the variable to set
+                variable_value (Any): Value to assign to the variable
+                
+            Returns:
+                bool: True on success, False on failure
+            """
             data = {
                 "stationThread": self.agent.station_thread_id,
                 "attributeName": variable_name,
@@ -922,11 +936,11 @@ class StationAgent:
             threads[serverIndex] = serverThreadId
             task_types[serverIndex] = serverTaskType
             
-            # Persist changes
-            self.agent.state.set("server", servers)
-            self.agent.state.set("serverCheckpoint", checkpoints)
-            self.agent.state.set("serverThread", threads)
-            self.agent.state.set("serverTaskType", task_types)
+            # Persist changes using internal method to bypass reserved variable protection
+            self.agent.state._set_internal("server", servers)
+            self.agent.state._set_internal("serverCheckpoint", checkpoints)
+            self.agent.state._set_internal("serverThread", threads)
+            self.agent.state._set_internal("serverTaskType", task_types)
 
             return {"status": "loaded", "serverThread": serverThreadId}
 
@@ -955,8 +969,8 @@ class StationAgent:
             checkpoints = self.agent.state.get("serverCheckpoint") or ["setup"] * len(servers)
             checkpoints[index] = checkpoint
 
-            self.agent.state.set("server", servers)
-            self.agent.state.set("serverCheckpoint", checkpoints)
+            self.agent.state._set_internal("server", servers)
+            self.agent.state._set_internal("serverCheckpoint", checkpoints)
 
             return {"status": "unloaded"}
 
