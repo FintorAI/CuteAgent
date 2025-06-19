@@ -928,7 +928,6 @@ class StationAgent:
 
             # Update server state arrays
             servers[serverIndex] = "busy"
-            checkpoints[serverIndex] = "running"
             
             threads = self.agent.state.get("serverThread") or ["idle"] * len(servers)
             task_types = self.agent.state.get("serverTaskType") or ["taskPlaceholder"] * len(servers)
@@ -970,7 +969,7 @@ class StationAgent:
             checkpoints[index] = checkpoint
 
             self.agent.state._set_internal("server", servers)
-            self.state._set_internal("serverCheckpoint", checkpoints)
+            self.agent.state._set_internal("serverCheckpoint", checkpoints)
 
             return {"status": "unloaded"}
 
@@ -1021,17 +1020,14 @@ class StationAgent:
         then calls `client.runs.wait` with a `Command` object to resume the graph,
         mirroring the logic from our successful test.
 
-        .. warning::
-            The `assistant_id` stored in the shared state via `state.set('{task_type}_assistant_id', ...)`
-            **MUST** be the graph's UUID (e.g., '5e3ad181-...') and not a friendly name
-            (e.g., 'Station2'). Using a friendly name will result in a 422 Unprocessable
-            Entity error.
+        It is crucial that the `assistant_id` stored in the shared state is the
+        correct UUID for the graph (e.g., '5e3ad181-...') and not a friendly name.
 
         Args:
             task_type (str): The identifier for the task, used to retrieve state
                              variables (e.g., 'Station2').
             resume_payload (Any): The payload required by the interrupted node
-                                  to continue. Defaults to "nextstep: Proceed".
+                                  to continue.
 
         Returns:
             Dict: A dictionary containing the result of the operation.
@@ -1043,8 +1039,7 @@ class StationAgent:
         except ImportError as e:
             return {"success": False, "error": f"Failed to import LangGraph SDK: {str(e)}"}
 
-        # Retrieve required info from shared state
-        thread_id = self.state.get(f"{task_type}_thread_id")
+        thread_id =  "24cc1838-0e68-48f0-b27f-a70892a7e66f" #self.state.get(f"{task_type}_thread_id")
         langgraph_url = self.state.get(f"{task_type}_url")
         assistant_id = self.state.get(f"{task_type}_assistant_id") # Must be the UUID
 
