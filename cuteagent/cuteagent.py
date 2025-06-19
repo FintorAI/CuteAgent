@@ -970,7 +970,7 @@ class StationAgent:
             checkpoints[index] = checkpoint
 
             self.agent.state._set_internal("server", servers)
-            self.agent.state._set_internal("serverCheckpoint", checkpoints)
+            self.state._set_internal("serverCheckpoint", checkpoints)
 
             return {"status": "unloaded"}
 
@@ -1013,87 +1013,74 @@ class StationAgent:
                 "serverTaskType": task_types[index]
             }
     
-    def uninterrupt(self, task_type: str) -> Dict:
+    def uninterrupt(self, task_type: str, resume_payload: Any = "nextstep: Proceed") -> Dict:
         """
-        Resumes an interrupted LangGraph execution for a given task type.
+        Resumes an interrupted LangGraph execution by sending a resume command.
 
-        This function retrieves the thread ID, LangGraph URL, and assistant ID
-        from the shared state based on the task_type, then sends a resume
-        command to the LangGraph instance.
+        This function retrieves the necessary IDs and URL from the shared state,
+        then calls `client.runs.wait` with a `Command` object to resume the graph,
+        mirroring the logic from our successful test.
+
+        .. warning::
+            The `assistant_id` stored in the shared state via `state.set('{task_type}_assistant_id', ...)`
+            **MUST** be the graph's UUID (e.g., '5e3ad181-...') and not a friendly name
+            (e.g., 'Station2'). Using a friendly name will result in a 422 Unprocessable
+            Entity error.
 
         Args:
-            task_type (str): The type of task to uninterrupt.
+            task_type (str): The identifier for the task, used to retrieve state
+                             variables (e.g., 'Station2').
+            resume_payload (Any): The payload required by the interrupted node
+                                  to continue. Defaults to "nextstep: Proceed".
 
         Returns:
             Dict: A dictionary containing the result of the operation.
-                  - {"success": True, "message": "...", "response": ...} on success.
-                  - {"success": False, "error": "..."} on failure.
         """
-        print(f"Attempting to uninterrupt task: {task_type}")
+        print(f"Attempting to resume task '{task_type}' with payload: '{resume_payload}'")
         try:
             from langgraph_sdk import get_sync_client
             from langgraph_sdk.schema import Command
         except ImportError as e:
-            error_message = f"Failed to import LangGraph SDK: {str(e)}"
-            print(f"ERROR: {error_message}")
-            return {"success": False, "error": error_message}
+            return {"success": False, "error": f"Failed to import LangGraph SDK: {str(e)}"}
 
-        thread_id_var = f"{task_type}_thread_id"
-        url_var = f"{task_type}_url"
-        assistant_var = f"{task_type}_assistant_id"
-
-        thread_id = self.state.get(thread_id_var)
-        langgraph_url = self.state.get(url_var)
-        assistant_id = self.state.get(assistant_var)
+        # Retrieve required info from shared state
+        thread_id = self.state.get(f"{task_type}_thread_id")
+        langgraph_url = self.state.get(f"{task_type}_url")
+        assistant_id = self.state.get(f"{task_type}_assistant_id") # Must be the UUID
 
         if not all([thread_id, langgraph_url, assistant_id]):
-            missing = []
-            if not thread_id:
-                missing.append(thread_id_var)
-            if not langgraph_url:
-                missing.append(url_var)
-            if not assistant_id:
-                missing.append(assistant_var)
-            error_message = f"Missing required state variables: {', '.join(missing)}"
-            print(f"ERROR: {error_message}")
-            return {"success": False, "error": error_message}
+            missing = [v for v, k in [("thread_id", thread_id), ("url", langgraph_url), ("assistant_id", assistant_id)] if not k]
+            return {"success": False, "error": f"Missing required state variables: {', '.join(missing)}"}
 
-        print(f"Found thread_id: {thread_id}, url: {langgraph_url}, assistant_id: {assistant_id}")
-
-        # Check if langgraph_token is provided
         if not self.langgraph_token:
-            error_message = "LangGraph token is required for uninterrupt functionality. Please provide langgraph_token when initializing StationAgent."
-            print(f"ERROR: {error_message}")
-            return {"success": False, "error": error_message}
+            return {"success": False, "error": "LangGraph token is required for uninterrupt functionality."}
+
+        print(f"Found Config: thread_id={thread_id}, assistant_id={assistant_id}")
 
         try:
             client = get_sync_client(url=langgraph_url, api_key=self.langgraph_token)
             print("Successfully initialized LangGraph client.")
         except Exception as e:
-            error_message = f"Failed to initialize LangGraph client: {str(e)}"
-            print(f"ERROR: {error_message}")
-            return {"success": False, "error": error_message}
+            return {"success": False, "error": f"Failed to initialize LangGraph client: {str(e)}"}
 
         try:
-            resume_payload = {"nextStep": "proceed"}
-            print(f"Resuming run with payload: {resume_payload}")
-
+            print("Calling client.runs.wait() with resume command...")
             resumed_state = client.runs.wait(
                 thread_id,
                 assistant_id,
                 command=Command(resume=resume_payload)
             )
 
-            print(f"Successfully resumed thread: {thread_id}")
+            print(f"Successfully resumed graph for thread: {thread_id}")
             return {
                 'success': True,
                 'thread_id': thread_id,
                 'task_type': task_type,
-                'message': 'Successfully resumed station execution',
+                'message': 'Successfully resumed graph execution.',
                 'response_preview': str(resumed_state)[:200]
             }
         except Exception as e:
-            error_message = f"Error resuming LangGraph execution: {str(e)}"
+            error_message = f"Error resuming graph execution: {str(e)}"
             print(f"ERROR: {error_message}")
             return {"success": False, "error": error_message}
 
