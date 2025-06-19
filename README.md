@@ -778,6 +778,8 @@ Resume an interrupted LangGraph execution for a given task type.
 
 This method retrieves the thread ID, LangGraph URL, and assistant ID from shared state based on the task_type, then sends a resume command to the LangGraph instance with `{"nextStep": "proceed"}`. **Requires `langgraph_token` to be provided during StationAgent initialization.**
 
+⚠️ **Current Limitation**: This function assumes that each graph only has one interrupted node at any given time. It sends a generic `{"nextStep": "proceed"}` command to resume execution from the current interrupt point.
+
 **Parameters:**
 - `task_type` (str): The type of task to uninterrupt (used to build variable names)
 

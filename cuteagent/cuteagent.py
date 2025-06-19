@@ -1039,8 +1039,8 @@ class StationAgent:
             return {"success": False, "error": error_message}
 
         thread_id_var = f"{task_type}_thread_id"
-        url_var = f"{task_type}_URL"
-        assistant_var = f"{task_type}_Assistant"
+        url_var = f"{task_type}_url"
+        assistant_var = f"{task_type}_assistant_id"
 
         thread_id = self.state.get(thread_id_var)
         langgraph_url = self.state.get(url_var)
