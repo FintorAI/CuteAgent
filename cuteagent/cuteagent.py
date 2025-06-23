@@ -136,17 +136,28 @@ class WindowsAgent:
             print(f"Error in pause operation: {e}")
             return False
 
-    def click_element_name(self, task_type: str, element_name: str):
-        """Click on an element by fetching its coordinates from the API.
+    def click_cached_element(self, task_type: str, element_name: str):
+        """Click on an element using cached coordinates from the API.
+        
+        This method fetches cached element coordinates from the API based on the 
+        element name and task type, then performs a click action at those coordinates.
+        Instead of requiring direct coordinates, it uses the element name and task_type
+        to retrieve cached coordinate data from the element search API.
         
         Args:
             task_type (str): The task type ID (e.g., 'approveITP')
             element_name (str): The name of the element to click
+            
+        Returns:
+            Result from the click operation or None if failed
+            
+        Raises:
+            ValueError: If cache_token is not provided during WindowsAgent initialization
         """
         try:
             # Check if cache_token is defined
             if self.cache_token is None:
-                raise ValueError("cache_token is required for click_element_name operation but was not provided during WindowsAgent initialization")
+                raise ValueError("cache_token is required for click_cached_element operation but was not provided during WindowsAgent initialization")
             
             # API configuration
             api_url = "https://cega6bexzc.execute-api.us-west-1.amazonaws.com/prod/elements/search"
@@ -213,7 +224,7 @@ class WindowsAgent:
             print(f"Value error: {e}")
             return None
         except Exception as e:
-            print(f"Error in click_element_name operation: {e}")
+            print(f"Error in click_cached_element operation: {e}")
             return None
 
 class VisionAgent:

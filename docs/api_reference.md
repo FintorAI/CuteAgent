@@ -1,3 +1,326 @@
+# CuteAgent API Reference
+
+## Overview
+
+CuteAgent provides three main agent classes for comprehensive automation:
+
+- **StationAgent**: Shared state management and server coordination for LangGraph workflows
+- **WindowsAgent**: Computer automation and GUI interaction 
+- **HumanAgent**: Human-in-the-loop task management
+
+---
+
+# WindowsAgent API Reference
+
+## Overview
+
+WindowsAgent provides computer automation capabilities including screen capture, element clicking, and GUI interaction. It supports both direct coordinate-based actions and cached element-based actions for improved reliability.
+
+## Constructor
+
+### `WindowsAgent(variable_name="friend", os_url=OS_URL, cache_token=None)`
+
+Initialize a new WindowsAgent instance.
+
+**Parameters:**
+- `variable_name` (str, optional): Name used by hello_old_friend method. Defaults to "friend"
+- `os_url` (str, optional): URL for OS operations. Defaults to OS_URL 
+- `cache_token` (str, optional): API token for cached element search operations. Required for click_cached_element
+
+**Example:**
+```python
+# Basic initialization
+agent = WindowsAgent()
+
+# With cache token for element-based clicking
+agent = WindowsAgent(cache_token="your-api-key-here")
+
+# With custom OS URL
+agent = WindowsAgent(os_url="https://custom-server.ngrok.app")
+```
+
+---
+
+## Screen Interaction Methods
+
+### `agent.click_element(x, y)`
+
+Click at specific screen coordinates.
+
+**Parameters:**
+- `x` (int): X coordinate on screen
+- `y` (int): Y coordinate on screen
+
+**Returns:**
+- Result from click operation or None if failed
+
+**Raises:**
+- `ValueError`: If coordinates are not numbers
+
+**Example:**
+```python
+# Click at specific coordinates
+result = agent.click_element(100, 200)
+if result:
+    print("Click successful")
+```
+
+### `agent.click_cached_element(task_type, element_name)`
+
+Click on an element using cached coordinates from the API.
+
+This method fetches cached element coordinates from the API based on the element name and task type, then performs a click action at those coordinates. Instead of requiring direct coordinates, it uses the element name and task_type to retrieve cached coordinate data from the element search API.
+
+**Parameters:**
+- `task_type` (str): The task type ID (e.g., 'approveITP')
+- `element_name` (str): The name of the element to click
+
+**Returns:**
+- Result from the click operation or None if failed
+
+**Raises:**
+- `ValueError`: If cache_token is not provided during WindowsAgent initialization
+- `requests.exceptions.RequestException`: If API request fails
+- `KeyError`: If required coordinates are missing from API response
+
+**Example:**
+```python
+# Initialize with cache token (required)
+agent = WindowsAgent(cache_token="your-api-key-here")
+
+# Click on cached element
+result = agent.click_cached_element("approveITP", "submit_button")
+if result:
+    print("Successfully clicked submit button")
+else:
+    print("Failed to click element")
+
+# Error handling
+try:
+    agent.click_cached_element("workflowTask", "save_document")
+except ValueError as e:
+    print(f"Configuration error: {e}")
+```
+
+### `agent.pause(seconds)`
+
+Pause execution for the specified duration.
+
+**Parameters:**
+- `seconds` (float): Number of seconds to pause
+
+**Returns:**
+- `True` on success, `False` on failure
+
+**Raises:**
+- `ValueError`: If seconds is negative
+
+**Example:**
+```python
+# Pause for 2 seconds
+agent.pause(2.0)
+
+# Pause for half a second
+agent.pause(0.5)
+```
+
+---
+
+## Screen Capture Methods
+
+### `agent.screenshot()`
+
+Take a full screenshot of the current screen.
+
+**Returns:**
+- Screenshot URL or error information
+
+**Example:**
+```python
+screenshot_url = agent.screenshot()
+print(f"Screenshot saved: {screenshot_url}")
+```
+
+### `agent.screenshot_cropped(arr_input)`
+
+Take a cropped screenshot of a specific screen area.
+
+**Parameters:**
+- `arr_input` (list): Crop coordinates [x, y, width, height]
+
+**Returns:**
+- Cropped screenshot URL or error information
+
+**Example:**
+```python
+# Crop area from (10, 50) with 800x600 size
+cropped = agent.screenshot_cropped([10, 50, 800, 600])
+print(f"Cropped screenshot: {cropped}")
+```
+
+---
+
+## General Methods
+
+### `agent.act(input_data)`
+
+Send raw action data to the OS interface.
+
+**Parameters:**
+- `input_data`: Action data to send
+
+**Returns:**
+- Result from the action or None if failed
+
+**Example:**
+```python
+action_data = {
+    "action": "TYPE",
+    "value": "Hello World",
+    "model_selected": "claude"
+}
+result = agent.act(action_data)
+```
+
+### `agent.hello_world()`
+
+Print a hello world message.
+
+**Example:**
+```python
+agent.hello_world()  # Prints: "Hello World from WindowsAgent!"
+```
+
+### `agent.hello_old_friend()`
+
+Print a greeting using the configured variable name.
+
+**Example:**
+```python
+agent = WindowsAgent(variable_name="colleague")
+agent.hello_old_friend()  # Prints: "Hello, my old colleague!"
+```
+
+### `agent.add(a, b)`
+
+Add two numbers (utility method).
+
+**Parameters:**
+- `a` (number): First number
+- `b` (number): Second number
+
+**Returns:**
+- Sum of a and b
+
+**Example:**
+```python
+result = agent.add(5, 3)  # Returns 8
+```
+
+---
+
+## Usage Patterns
+
+### Basic Screen Automation
+
+```python
+# Initialize agent
+agent = WindowsAgent()
+
+# Take screenshot to see current state
+screenshot = agent.screenshot()
+print(f"Current screen: {screenshot}")
+
+# Click on specific coordinates
+agent.click_element(100, 200)
+agent.pause(1)
+
+# Take another screenshot to verify
+final_screenshot = agent.screenshot()
+```
+
+### Element-Based Automation (Recommended)
+
+```python
+# Initialize with cache token
+agent = WindowsAgent(cache_token="your-api-key-here")
+
+try:
+    # Click on named elements instead of coordinates
+    agent.click_cached_element("loginForm", "username_field")
+    agent.pause(0.5)
+    
+    agent.click_cached_element("loginForm", "password_field") 
+    agent.pause(0.5)
+    
+    agent.click_cached_element("loginForm", "login_button")
+    agent.pause(2)
+    
+    # Verify result
+    screenshot = agent.screenshot()
+    print(f"Login completed: {screenshot}")
+    
+except ValueError as e:
+    print(f"Element clicking failed: {e}")
+```
+
+### Error Handling
+
+```python
+agent = WindowsAgent(cache_token="your-token")
+
+def safe_click_element(task_type, element_name, max_retries=3):
+    """Safely click element with retries."""
+    for attempt in range(max_retries):
+        try:
+            result = agent.click_cached_element(task_type, element_name)
+            if result:
+                return True
+            print(f"Attempt {attempt + 1} failed, retrying...")
+            agent.pause(1)
+        except Exception as e:
+            print(f"Error on attempt {attempt + 1}: {e}")
+            if attempt == max_retries - 1:
+                raise
+            agent.pause(2)
+    return False
+
+# Usage
+if safe_click_element("myTask", "submit_button"):
+    print("Element clicked successfully")
+else:
+    print("Failed to click element after all retries")
+```
+
+## Error Handling
+
+### Common Exceptions
+
+#### `ValueError`
+- Raised when cache_token is required but not provided
+- Raised when coordinates are invalid
+- Raised when pause duration is negative
+
+#### `requests.exceptions.RequestException`
+- Network connectivity issues with element search API
+- API server errors
+- Authentication failures
+
+#### `KeyError`
+- Missing required fields in API response
+- Invalid coordinate data from API
+
+### API Configuration
+
+The element search API uses:
+- **URL**: `https://cega6bexzc.execute-api.us-west-1.amazonaws.com/prod/elements/search`
+- **Authentication**: x-api-key header with cache_token
+- **Parameters**: 
+  - `name`: Element name to search for
+  - `taskTypeID`: Task type identifier
+
+---
+
 # StationAgent API Reference
 
 ## Overview
