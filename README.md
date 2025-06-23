@@ -773,51 +773,120 @@ status = await asyncio.to_thread(agent.server.avail, index=0)
 
 ## Task Management Methods
 
-### `agent.uninterrupt(task_type)`
+### `agent.uninterrupt(task_type, resume_payload="nextstep: Proceed")`
 Resume an interrupted LangGraph execution for a given task type.
 
-This method retrieves the thread ID, LangGraph URL, and assistant ID from shared state based on the task_type, then sends a resume command to the LangGraph instance with `{"nextStep": "proceed"}`. **Requires `langgraph_token` to be provided during StationAgent initialization.**
+This method retrieves the thread ID, LangGraph URL, and assistant ID from shared state based on the task_type, then sends a resume command to the LangGraph instance. **Requires `langgraph_token` to be provided during StationAgent initialization.**
 
-⚠️ **Current Limitation**: This function assumes that each graph only has one interrupted node at any given time. It sends a generic `{"nextStep": "proceed"}` command to resume execution from the current interrupt point.
+⚠️ **Important**: The assistant_id stored in shared state must be the correct UUID for the graph (e.g., '5e3ad181-...') and not a friendly name.
 
 **Parameters:**
-- `task_type` (str): The type of task to uninterrupt (used to build variable names)
+- `task_type` (str): The type of task to uninterrupt (used to build variable names like `{task_type}_thread_id`)
+- `resume_payload` (Any, optional): The payload required by the interrupted node to continue. Defaults to "nextstep: Proceed"
 
 **Required State Variables:**
+The uninterrupt method expects these variables to be set in shared state:
 - `{task_type}_thread_id`: The LangGraph thread ID to resume
-- `{task_type}_URL`: The LangGraph server URL  
-- `{task_type}_Assistant`: The LangGraph assistant ID
+- `{task_type}_url`: The LangGraph server URL (note: lowercase 'url')
+- `{task_type}_assistant_id`: The LangGraph assistant ID (must be the UUID, not friendly name)
 
 **Required Initialization:**
 - `langgraph_token`: Must be provided when creating StationAgent
 
+**Complete Example:**
 ```python
+import os
+from cuteagent import StationAgent
+
+# Configuration
+THREAD_ID = "41382435-be95-4925-b492-798b0974e9d4"
+LANGGRAPH_URL = "https://station2-6bb6c94dd95e5473b7df8cdfcf82151e.us.langgraph.app"
+ASSISTANT_ID = "station2"  # This must be the actual UUID
+TASK_TYPE = "Station2"
+RESUME_PAYLOAD = "nextstep: Proceed"
+
 # Initialize StationAgent with LangGraph token
 agent = await asyncio.to_thread(
     StationAgent,
-    station_thread_id="workflow-123",
-    graph_thread_id="thread-456", 
-    token="shared-state-token",
-    langgraph_token="langgraph-api-token"  # Required for uninterrupt
+    station_thread_id="test-uninterrupt-station",
+    graph_thread_id="test-graph-123",
+    token="dev-token-123",
+    langgraph_token=os.environ.get("LANGGRAPH_TOKEN")  # Required for uninterrupt
 )
 
 # Set up the required state variables for your task type
-await asyncio.to_thread(agent.state.push, {
-    "main_workflow_thread_id": "thread-abc-123",
-    "main_workflow_URL": "https://your-langgraph-server.com",
-    "main_workflow_Assistant": "asst_xyz789"
-})
+required_vars = {
+    f"{TASK_TYPE}_thread_id": THREAD_ID,
+    f"{TASK_TYPE}_url": LANGGRAPH_URL,  # Note: lowercase 'url'
+    f"{TASK_TYPE}_assistant_id": ASSISTANT_ID  # Note: lowercase 'assistant_id'
+}
+
+# Set each variable individually or use push for bulk operations
+for var_name, var_value in required_vars.items():
+    result = await asyncio.to_thread(agent.state.set, var_name, var_value)
+    print(f"Set {var_name} = {var_value}")
+
+# Alternative: Use push for bulk set
+# await asyncio.to_thread(agent.state.push, required_vars)
 
 # Resume the interrupted workflow
-result = await asyncio.to_thread(agent.uninterrupt, "main_workflow")
+result = await asyncio.to_thread(agent.uninterrupt, TASK_TYPE, RESUME_PAYLOAD)
 
 # Handle the result
-if result["success"]:
-    print(f"✅ Successfully resumed workflow: {result['thread_id']}")
-    print(f"Task type: {result['task_type']}")
-    print(f"Response preview: {result['response_preview']}")
+if result.get("success"):
+    print("🎉 The thread was successfully resumed!")
+    print(f"Thread ID: {result.get('thread_id')}")
+    print(f"Task Type: {result.get('task_type')}")
+    print(f"Message: {result.get('message')}")
+    print(f"Response Preview: {result.get('response_preview', '')[:200]}...")
 else:
-    print(f"❌ Failed to resume: {result['error']}")
+    print(f"❌ Failed to resume: {result.get('error')}")
+```
+
+**State Variable Setup Helper:**
+```python
+def setup_uninterrupt_state(agent: StationAgent, task_type: str, thread_id: str, 
+                           langgraph_url: str, assistant_id: str):
+    """
+    Helper function to set up required state variables for uninterrupt functionality.
+    
+    Args:
+        agent: StationAgent instance
+        task_type: Task type identifier (e.g., "Station2")
+        thread_id: LangGraph thread ID to resume
+        langgraph_url: LangGraph server URL
+        assistant_id: LangGraph assistant ID (must be UUID)
+    
+    Returns:
+        bool: True if all variables were set successfully
+    """
+    required_vars = {
+        f"{task_type}_thread_id": thread_id,
+        f"{task_type}_url": langgraph_url,
+        f"{task_type}_assistant_id": assistant_id
+    }
+    
+    try:
+        for var_name, var_value in required_vars.items():
+            result = agent.state.set(var_name, var_value)
+            if not result:
+                print(f"Failed to set {var_name}")
+                return False
+            print(f"✅ Set {var_name} = {var_value}")
+        return True
+    except Exception as e:
+        print(f"Error setting up state variables: {e}")
+        return False
+
+# Usage with asyncio.to_thread
+success = await asyncio.to_thread(
+    setup_uninterrupt_state, 
+    agent, 
+    "Station2", 
+    "41382435-be95-4925-b492-798b0974e9d4",
+    "https://station2-server.us.langgraph.app",
+    "5e3ad181-actual-uuid-here"
+)
 ```
 
 **Return Values:**
@@ -825,23 +894,36 @@ else:
 # Success:
 {
     "success": True,
-    "thread_id": "thread-abc-123",
-    "task_type": "main_workflow", 
-    "message": "Successfully resumed station execution",
+    "thread_id": "41382435-be95-4925-b492-798b0974e9d4",
+    "task_type": "Station2", 
+    "message": "Successfully resumed graph execution.",
     "response_preview": "First 200 chars of LangGraph response..."
 }
 
-# Failure:
+# Failure - Missing state variables:
 {
     "success": False,
-    "error": "Missing required state variables: main_workflow_thread_id, main_workflow_URL, main_workflow_Assistant"
+    "error": "Missing required state variables: thread_id, url, assistant_id"
 }
-# or
+
+# Failure - Missing LangGraph token:
 {
     "success": False,
-    "error": "LangGraph token is required for uninterrupt functionality. Please provide langgraph_token when initializing StationAgent."
+    "error": "LangGraph token is required for uninterrupt functionality."
+}
+
+# Failure - LangGraph execution error:
+{
+    "success": False,
+    "error": "Error resuming graph execution: [specific error message]"
 }
 ```
+
+**Variable Naming Important Notes:**
+- Use lowercase `url` not `URL` for the server URL variable
+- Use lowercase `assistant_id` not `Assistant` for the assistant ID variable  
+- The `assistant_id` must be the actual UUID from LangGraph, not a friendly name
+- All variable names follow the pattern: `{task_type}_{variable_name}`
 
 ## 🔒 Reserved Variables
 

@@ -25,16 +25,21 @@ SHARED_STATE_URL = "https://c16bgaz0i2.execute-api.us-west-1.amazonaws.com/prod"
 HITL_TOKEN = os.environ.get("HITL_TOKEN")
 
 class WindowsAgent:
-    def __init__(self, variable_name="friend" , os_url=OS_URL):
+    def __init__(self, variable_name="friend", os_url=OS_URL, cache_token=None):
         """
         Initializes the WindowsAgent with a configurable variable name.
 
         Args:
             variable_name (str): The name to be used by hello_old_friend.
                                  Defaults to "friend".
+            os_url (str): The URL for OS operations.
+                         Defaults to OS_URL.
+            cache_token (str): The API token for element search operations.
+                              Defaults to None.
         """
         self.config_variable_name = variable_name
         self.os_url = os_url
+        self.cache_token = cache_token
 
     def hello_world(self):
         """Prints a hello world message."""
@@ -130,6 +135,86 @@ class WindowsAgent:
         except Exception as e:
             print(f"Error in pause operation: {e}")
             return False
+
+    def click_element_name(self, task_type: str, element_name: str):
+        """Click on an element by fetching its coordinates from the API.
+        
+        Args:
+            task_type (str): The task type ID (e.g., 'approveITP')
+            element_name (str): The name of the element to click
+        """
+        try:
+            # Check if cache_token is defined
+            if self.cache_token is None:
+                raise ValueError("cache_token is required for click_element_name operation but was not provided during WindowsAgent initialization")
+            
+            # API configuration
+            api_url = "https://cega6bexzc.execute-api.us-west-1.amazonaws.com/prod/elements/search"
+            
+            # Prepare API request parameters
+            params = {
+                "name": element_name,
+                "taskTypeID": task_type
+            }
+            
+            headers = {
+                "x-api-key": self.cache_token
+            }
+            
+            # Make API call to get coordinates
+            response = requests.get(api_url, params=params, headers=headers)
+            
+            if response.status_code != 200:
+                print(f"API request failed with status code: {response.status_code}")
+                print(f"Response: {response.text}")
+                return None
+            
+            api_data = response.json()
+            
+            # Extract coordinates from API response
+            if 'x' in api_data and 'y' in api_data:
+                x = int(api_data['x'])
+                y = int(api_data['y'])
+            else:
+                print(f"Could not find x/y coordinates in API response: {api_data}")
+                return None
+            
+            print(f"Retrieved coordinates for '{element_name}': ({x}, {y})")
+            
+            # Validate coordinates
+            if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+                raise ValueError("Retrieved coordinates must be numbers")
+            
+            # Prepare input data for the click action
+            input_data = {
+                "action": "CLICK",
+                "coordinate": [x, y],
+                "value": "value",
+                "model_selected": "claude"
+            }
+            
+            # Execute the click using the existing client
+            client = Client(self.os_url)
+            result = client.predict(
+                user_input=str(input_data),
+                api_name="/process_input1"
+            )
+            
+            print(f"Click result: {result}")
+            return result
+            
+        except requests.exceptions.RequestException as e:
+            print(f"API request error: {e}")
+            return None
+        except KeyError as e:
+            print(f"Missing key in API response: {e}")
+            return None
+        except ValueError as e:
+            print(f"Value error: {e}")
+            return None
+        except Exception as e:
+            print(f"Error in click_element_name operation: {e}")
+            return None
 
 class VisionAgent:
     def __init__(self,screen_size=(1366, 768), model_selected="FINTOR_GUI", hf_fintor_gui_endpoint=HF_FINTOR_GUI_ENDPOINT, hf_token=HF_TOKEN):
@@ -423,7 +508,7 @@ class StationAgent:
     # Valid server status values
     VALID_SERVER_STATUS = {"busy", "idle"}
     
-    def __init__(self, station_thread_id: str, graph_thread_id: str, token: str, initial_state: Optional[Dict[str, Any]] = None, langgraph_token: Optional[str] = None):
+    def __init__(self, station_thread_id: str, graph_thread_id: str, token: str, initial_state: Optional[Dict[str, Any]] = None, langgraph_token: Optional[str] = None, current_graph_url: Optional[str] = None, current_graph_assistant_id: Optional[str] = None):
         """
         Initialize the StationAgent with thread IDs and authentication tokens.
         
@@ -433,11 +518,15 @@ class StationAgent:
             token (str): Authentication token for SharedState API access
             initial_state (dict, optional): Initial state object to push to SharedState API. Defaults to None.
             langgraph_token (str, optional): Authentication token for LangGraph API access. Required for uninterrupt functionality.
+            current_graph_url (str, optional): Current graph URL for pause/unpause functionality
+            current_graph_assistant_id (str, optional): Current graph assistant ID for pause/unpause functionality
         """
         self.station_thread_id = station_thread_id
         self.graph_thread_id = graph_thread_id
         self.token = token
         self.langgraph_token = langgraph_token
+        self.current_graph_url = current_graph_url
+        self.current_graph_assistant_id = current_graph_assistant_id
         self.base_url = SHARED_STATE_URL
         
         # Set up HTTP session with authentication
@@ -1074,6 +1163,165 @@ class StationAgent:
                 'message': 'Successfully resumed graph execution.',
                 'response_preview': str(resumed_state)[:200]
             }
+        except Exception as e:
+            error_message = f"Error resuming graph execution: {str(e)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
+
+    def pause(self, pause_tag: str) -> Dict:
+        """
+        Pause an already initiated StationAgent by interrupting the graph with a pause tag.
+        
+        Args:
+            pause_tag (str): The pause tag identifier
+            
+        Returns:
+            Dict: Status information about the pause operation
+        """
+        print(f"Attempting to pause with tag: '{pause_tag}'")
+        
+        # Step 2: Check if pause_tag-waitpoint exists and is "paused"
+        waitpoint_var = f"{pause_tag}-waitpoint"
+        waitpoint_status = self.state.get(waitpoint_var)
+        
+        if waitpoint_status == "paused":
+            return {"success": False, "status": "tagInUse", "error": f"Pause tag '{pause_tag}' is already in use"}
+        
+        # Step 3: Create waitpoint variables
+        # Use current graph URL and assistant ID if available, otherwise get from shared state
+        graph_url = self.current_graph_url or self.state.get("current-graph-url")
+        graph_assistant_id = self.current_graph_assistant_id or self.state.get("current-graph-assistant-id")
+        
+        if not graph_url or not graph_assistant_id:
+            return {"success": False, "error": "Current graph URL and assistant ID are required for pause functionality"}
+        
+        # Set waitpoint variables
+        waitpoint_url_var = f"{pause_tag}-waitpoint-url"
+        waitpoint_assistant_var = f"{pause_tag}-waitpoint-assistant"
+        waitpoint_thread_var = f"{pause_tag}-waitpoint-threadId"
+        
+        try:
+            # Store pause information in shared state
+            self.state.set(waitpoint_url_var, graph_url)
+            self.state.set(waitpoint_assistant_var, graph_assistant_id)
+            self.state.set(waitpoint_thread_var, self.graph_thread_id)
+            
+            # Step 4: Interrupt the graph
+            try:
+                from langgraph_sdk import get_sync_client
+                from langgraph_sdk.schema import Command
+            except ImportError as e:
+                return {"success": False, "error": f"Failed to import LangGraph SDK: {str(e)}"}
+            
+            if not self.langgraph_token:
+                return {"success": False, "error": "LangGraph token is required for pause functionality"}
+            
+            try:
+                client = get_sync_client(url=graph_url, api_key=self.langgraph_token)
+                
+                # Interrupt with pause_tag
+                human_response = client.runs.interrupt(
+                    thread_id=self.graph_thread_id,
+                    assistant_id=graph_assistant_id,
+                    interrupt_value={pause_tag: pause_tag}
+                )
+                
+                # Step 5: If successful, mark as paused
+                self.state.set(waitpoint_var, "paused")
+                
+                print(f"Successfully paused graph with tag: {pause_tag}")
+                return {
+                    "success": True,
+                    "status": "paused",
+                    "pause_tag": pause_tag,
+                    "thread_id": self.graph_thread_id,
+                    "message": f"Graph successfully paused with tag '{pause_tag}'"
+                }
+                
+            except Exception as e:
+                # Clean up waitpoint variables if interrupt failed
+                self.state.delete(waitpoint_url_var)
+                self.state.delete(waitpoint_assistant_var)
+                self.state.delete(waitpoint_thread_var)
+                
+                error_message = f"Error interrupting graph: {str(e)}"
+                print(f"ERROR: {error_message}")
+                return {"success": False, "error": error_message}
+                
+        except Exception as e:
+            error_message = f"Error setting waitpoint variables: {str(e)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
+
+    def unpause(self, pause_tag: str) -> Dict:
+        """
+        Unpause a previously paused StationAgent by resuming the graph execution.
+        
+        Args:
+            pause_tag (str): The pause tag identifier
+            
+        Returns:
+            Dict: Status information about the unpause operation
+        """
+        print(f"Attempting to unpause with tag: '{pause_tag}'")
+        
+        # Step 2: Check if pause_tag-waitpoint exists and is "paused"
+        waitpoint_var = f"{pause_tag}-waitpoint"
+        waitpoint_status = self.state.get(waitpoint_var)
+        
+        if waitpoint_status != "paused":
+            return {"success": False, "status": "tagNotPaused", "error": f"Pause tag '{pause_tag}' is not in paused state"}
+        
+        # Step 3: Get waitpoint variables
+        waitpoint_url_var = f"{pause_tag}-waitpoint-url"
+        waitpoint_assistant_var = f"{pause_tag}-waitpoint-assistant"
+        waitpoint_thread_var = f"{pause_tag}-waitpoint-threadId"
+        
+        graph_url = self.state.get(waitpoint_url_var)
+        graph_assistant_id = self.state.get(waitpoint_assistant_var)
+        thread_id = self.state.get(waitpoint_thread_var)
+        
+        if not all([graph_url, graph_assistant_id, thread_id]):
+            missing = []
+            if not graph_url: missing.append("url")
+            if not graph_assistant_id: missing.append("assistant_id")
+            if not thread_id: missing.append("thread_id")
+            
+            return {"success": False, "error": f"Missing waitpoint variables: {', '.join(missing)}"}
+        
+        # Step 4: Call the API to resume
+        try:
+            from langgraph_sdk import get_sync_client
+            from langgraph_sdk.schema import Command
+        except ImportError as e:
+            return {"success": False, "error": f"Failed to import LangGraph SDK: {str(e)}"}
+        
+        if not self.langgraph_token:
+            return {"success": False, "error": "LangGraph token is required for unpause functionality"}
+        
+        try:
+            client = get_sync_client(url=graph_url, api_key=self.langgraph_token)
+            
+            # Resume the paused execution
+            resumed_state = client.runs.wait(
+                thread_id,
+                graph_assistant_id,
+                command=Command(resume=f"nextstep: Resume from pause tag {pause_tag}")
+            )
+            
+            # Step 5: If successful, mark as unpaused
+            self.state.set(waitpoint_var, "unPaused")
+            
+            print(f"Successfully unpaused graph with tag: {pause_tag}")
+            return {
+                "success": True,
+                "status": "unPaused",
+                "pause_tag": pause_tag,
+                "thread_id": thread_id,
+                "message": f"Graph successfully unpaused from tag '{pause_tag}'",
+                "response_preview": str(resumed_state)[:200]
+            }
+            
         except Exception as e:
             error_message = f"Error resuming graph execution: {str(e)}"
             print(f"ERROR: {error_message}")
