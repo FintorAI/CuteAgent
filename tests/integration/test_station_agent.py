@@ -256,25 +256,21 @@ class StationAgentTester:
             self.log_test("Task Operations", False, "No agent available for testing")
             return
         
-        # Test uninterrupt with existing thread ID
+        # Test pause functionality
         try:
-            # First, set a test thread ID
-            thread_var = "test_task_thread_id"
-            self.agent.state.set(thread_var, "thread-123")
-            
-            result = self.agent.uninterrupt("test_task")
-            passed = isinstance(result, dict) and ("resumeFrom" in result or "error" in result)
-            self.log_test("Uninterrupt With Thread ID", passed, f"Uninterrupt returned: {result}")
+            result = self.agent.pause("test_pause_tag")
+            passed = isinstance(result, dict) and "success" in result
+            self.log_test("Pause Functionality", passed, f"Pause returned: {result}")
         except Exception as e:
-            self.log_test("Uninterrupt With Thread ID", False, f"Uninterrupt test failed: {e}")
+            self.log_test("Pause Functionality", False, f"Pause test failed: {e}")
         
-        # Test uninterrupt with non-existent thread ID
+        # Test unpause functionality
         try:
-            result = self.agent.uninterrupt("nonexistent_task")
-            expected_error = "error" in result and "not found" in result["error"].lower()
-            self.log_test("Uninterrupt Without Thread ID", expected_error, f"Uninterrupt for non-existent returned: {result}")
+            result = self.agent.unpause("test_pause_tag")
+            passed = isinstance(result, dict) and "success" in result
+            self.log_test("Unpause Functionality", passed, f"Unpause returned: {result}")
         except Exception as e:
-            self.log_test("Uninterrupt Without Thread ID", False, f"Uninterrupt non-existent failed: {e}")
+            self.log_test("Unpause Functionality", False, f"Unpause test failed: {e}")
     
     def test_error_handling(self):
         """Test error handling scenarios."""

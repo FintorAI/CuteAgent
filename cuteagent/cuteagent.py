@@ -528,7 +528,7 @@ class StationAgent:
             graph_thread_id (str): LangGraph thread identifier
             token (str): Authentication token for SharedState API access
             initial_state (dict, optional): Initial state object to push to SharedState API. Defaults to None.
-            langgraph_token (str, optional): Authentication token for LangGraph API access. Required for uninterrupt functionality.
+            langgraph_token (str, optional): Authentication token for LangGraph API access. Required for pause/unpause functionality.
             current_graph_url (str, optional): Current graph URL for pause/unpause functionality
             current_graph_assistant_id (str, optional): Current graph assistant ID for pause/unpause functionality
         """
@@ -1112,76 +1112,15 @@ class StationAgent:
                 "serverTaskType": task_types[index]
             }
     
-    def uninterrupt(self, task_type: str, resume_payload: Any = "nextstep: Proceed") -> Dict:
-        """
-        Resumes an interrupted LangGraph execution by sending a resume command.
 
-        This function retrieves the necessary IDs and URL from the shared state,
-        then calls `client.runs.wait` with a `Command` object to resume the graph,
-        mirroring the logic from our successful test.
-
-        It is crucial that the `assistant_id` stored in the shared state is the
-        correct UUID for the graph (e.g., '5e3ad181-...') and not a friendly name.
-
-        Args:
-            task_type (str): The identifier for the task, used to retrieve state
-                             variables (e.g., 'Station2').
-            resume_payload (Any): The payload required by the interrupted node
-                                  to continue.
-
-        Returns:
-            Dict: A dictionary containing the result of the operation.
-        """
-        print(f"Attempting to resume task '{task_type}' with payload: '{resume_payload}'")
-        try:
-            from langgraph_sdk import get_sync_client
-            from langgraph_sdk.schema import Command
-        except ImportError as e:
-            return {"success": False, "error": f"Failed to import LangGraph SDK: {str(e)}"}
-
-        thread_id =  "24cc1838-0e68-48f0-b27f-a70892a7e66f" #self.state.get(f"{task_type}_thread_id")
-        langgraph_url = self.state.get(f"{task_type}_url")
-        assistant_id = self.state.get(f"{task_type}_assistant_id") # Must be the UUID
-
-        if not all([thread_id, langgraph_url, assistant_id]):
-            missing = [v for v, k in [("thread_id", thread_id), ("url", langgraph_url), ("assistant_id", assistant_id)] if not k]
-            return {"success": False, "error": f"Missing required state variables: {', '.join(missing)}"}
-
-        if not self.langgraph_token:
-            return {"success": False, "error": "LangGraph token is required for uninterrupt functionality."}
-
-        print(f"Found Config: thread_id={thread_id}, assistant_id={assistant_id}")
-
-        try:
-            client = get_sync_client(url=langgraph_url, api_key=self.langgraph_token)
-            print("Successfully initialized LangGraph client.")
-        except Exception as e:
-            return {"success": False, "error": f"Failed to initialize LangGraph client: {str(e)}"}
-
-        try:
-            print("Calling client.runs.wait() with resume command...")
-            resumed_state = client.runs.wait(
-                thread_id,
-                assistant_id,
-                command=Command(resume=resume_payload)
-            )
-
-            print(f"Successfully resumed graph for thread: {thread_id}")
-            return {
-                'success': True,
-                'thread_id': thread_id,
-                'task_type': task_type,
-                'message': 'Successfully resumed graph execution.',
-                'response_preview': str(resumed_state)[:200]
-            }
-        except Exception as e:
-            error_message = f"Error resuming graph execution: {str(e)}"
-            print(f"ERROR: {error_message}")
-            return {"success": False, "error": error_message}
 
     def pause(self, pause_tag: str) -> Dict:
         """
         Pause an already initiated StationAgent by interrupting the graph with a pause tag.
+        
+        This method stores necessary information (URL, assistant ID, thread ID, and API key) 
+        in shared state variables so that the unpause() method can later resume the graph
+        using the LangGraph Thread Unpause API.
         
         Args:
             pause_tag (str): The pause tag identifier
@@ -1210,12 +1149,14 @@ class StationAgent:
         waitpoint_url_var = f"{pause_tag}-waitpoint-url"
         waitpoint_assistant_var = f"{pause_tag}-waitpoint-assistant"
         waitpoint_thread_var = f"{pause_tag}-waitpoint-threadId"
+        waitpoint_apikey_var = f"{pause_tag}-waitpoint-apikey"
         
         try:
-            # Store pause information in shared state
+            # Store pause information in shared state (including API key for unpause)
             self.state.set(waitpoint_url_var, graph_url)
             self.state.set(waitpoint_assistant_var, graph_assistant_id)
             self.state.set(waitpoint_thread_var, self.graph_thread_id)
+            self.state.set(waitpoint_apikey_var, self.langgraph_token)
             
             # Step 4: Interrupt the graph
             try:
@@ -1254,6 +1195,7 @@ class StationAgent:
                 self.state.delete(waitpoint_url_var)
                 self.state.delete(waitpoint_assistant_var)
                 self.state.delete(waitpoint_thread_var)
+                self.state.delete(waitpoint_apikey_var)
                 
                 error_message = f"Error interrupting graph: {str(e)}"
                 print(f"ERROR: {error_message}")
@@ -1264,64 +1206,91 @@ class StationAgent:
             print(f"ERROR: {error_message}")
             return {"success": False, "error": error_message}
 
-    def unpause(self, pause_tag: str) -> Dict:
+    def unpause(self, pause_tag: str, resume_payload: str = "nextstep: Proceed") -> Dict:
         """
-        Unpause a previously paused StationAgent by resuming the graph execution.
+        Unpause a previously paused StationAgent by calling the LangGraph Thread Unpause API.
         
         Args:
             pause_tag (str): The pause tag identifier
+            resume_payload (str, optional): Payload to send to resume thread. Defaults to "nextstep: Proceed"
             
         Returns:
             Dict: Status information about the unpause operation
         """
         print(f"Attempting to unpause with tag: '{pause_tag}'")
         
-        # Step 2: Check if pause_tag-waitpoint exists and is "paused"
+        # Step 1: Check if pause_tag-waitpoint exists and is "paused"
         waitpoint_var = f"{pause_tag}-waitpoint"
         waitpoint_status = self.state.get(waitpoint_var)
         
         if waitpoint_status != "paused":
             return {"success": False, "status": "tagNotPaused", "error": f"Pause tag '{pause_tag}' is not in paused state"}
         
-        # Step 3: Get waitpoint variables
+        # Step 2: Get waitpoint variables
         waitpoint_url_var = f"{pause_tag}-waitpoint-url"
         waitpoint_assistant_var = f"{pause_tag}-waitpoint-assistant"
         waitpoint_thread_var = f"{pause_tag}-waitpoint-threadId"
+        waitpoint_apikey_var = f"{pause_tag}-waitpoint-apikey"
         
         graph_url = self.state.get(waitpoint_url_var)
         graph_assistant_id = self.state.get(waitpoint_assistant_var)
         thread_id = self.state.get(waitpoint_thread_var)
+        api_key = self.state.get(waitpoint_apikey_var)
         
-        if not all([graph_url, graph_assistant_id, thread_id]):
+        if not all([graph_url, graph_assistant_id, thread_id, api_key]):
             missing = []
             if not graph_url: missing.append("url")
             if not graph_assistant_id: missing.append("assistant_id")
             if not thread_id: missing.append("thread_id")
+            if not api_key: missing.append("api_key")
             
             return {"success": False, "error": f"Missing waitpoint variables: {', '.join(missing)}"}
         
-        # Step 4: Call the API to resume
+        # Step 3: Call the LangGraph Thread Unpause API
         try:
-            from langgraph_sdk import get_sync_client
-            from langgraph_sdk.schema import Command
-        except ImportError as e:
-            return {"success": False, "error": f"Failed to import LangGraph SDK: {str(e)}"}
-        
-        if not self.langgraph_token:
-            return {"success": False, "error": "LangGraph token is required for unpause functionality"}
-        
-        try:
-            client = get_sync_client(url=graph_url, api_key=self.langgraph_token)
+            # Prepare API request payload
+            unpause_payload = {
+                "thread_id": thread_id,
+                "assistant_id": graph_assistant_id,
+                "langgraph_url": graph_url,
+                "api_key": api_key,
+                "resume_payload": resume_payload
+            }
             
-            # Resume the paused execution
-            resumed_state = client.runs.wait(
-                thread_id,
-                graph_assistant_id,
-                command=Command(resume=f"nextstep: Resume from pause tag {pause_tag}")
-            )
+            # Make API call to unpause endpoint
+            unpause_url = f"{self.base_url}/shared-state/unpause"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.token}"
+            }
             
-            # Step 5: If successful, mark as unpaused
+            response = requests.post(unpause_url, headers=headers, json=unpause_payload, timeout=30)
+            
+            if response.status_code != 200:
+                return {
+                    "success": False, 
+                    "error": f"Unpause API request failed with status {response.status_code}: {response.text}"
+                }
+            
+            api_result = response.json()
+            
+            if not api_result.get("success", False):
+                return {
+                    "success": False,
+                    "error": f"Unpause API returned error: {api_result.get('error', 'Unknown error')}"
+                }
+            
+            # Step 4: If successful, mark as unpaused and clean up waitpoint variables
             self.state.set(waitpoint_var, "unPaused")
+            
+            # Optional: Clean up waitpoint variables after successful unpause
+            try:
+                self.state.delete(waitpoint_url_var)
+                self.state.delete(waitpoint_assistant_var)
+                self.state.delete(waitpoint_thread_var)
+                self.state.delete(waitpoint_apikey_var)
+            except Exception as cleanup_error:
+                print(f"Warning: Could not clean up waitpoint variables: {cleanup_error}")
             
             print(f"Successfully unpaused graph with tag: {pause_tag}")
             return {
@@ -1329,12 +1298,24 @@ class StationAgent:
                 "status": "unPaused",
                 "pause_tag": pause_tag,
                 "thread_id": thread_id,
-                "message": f"Graph successfully unpaused from tag '{pause_tag}'",
-                "response_preview": str(resumed_state)[:200]
+                "assistant_id": graph_assistant_id,
+                "message": f"Graph successfully unpaused from tag '{pause_tag}' using API",
+                "response_preview": api_result.get("response_preview", ""),
+                "unpause_method": "shared_state_api"
             }
             
+        except requests.exceptions.RequestException as e:
+            error_message = f"Network error calling unpause API: {str(e)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
+        
+        except json.JSONDecodeError as e:
+            error_message = f"Invalid JSON response from unpause API: {str(e)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
+        
         except Exception as e:
-            error_message = f"Error resuming graph execution: {str(e)}"
+            error_message = f"Unexpected error during unpause operation: {str(e)}"
             print(f"ERROR: {error_message}")
             return {"success": False, "error": error_message}
 

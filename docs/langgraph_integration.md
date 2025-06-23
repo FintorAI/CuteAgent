@@ -118,16 +118,10 @@ async def workflow_start_node(state: WorkflowState, config: RunnableConfig) -> W
         except (json.JSONDecodeError, KeyError):
             print("Could not extract stationThreadId from user_input")
     
-    # 3. Check for workflow resumption
-    resume_info = station_agent.uninterrupt("document_workflow")
-    if "resumeFrom" in resume_info:
-        print(f"🔄 Resuming workflow from: {resume_info['resumeFrom']}")
-        state = station_agent.state.sync_all(state)
-        state.current_node = state.sharedState.get("lastCompletedNode", 1)
-    else:
-        print("🆕 Starting new document workflow")
-        station_agent.state.set("document_workflow_thread_id", configuration.get("thread_id"))
-        station_agent.state.set("workflowStartTime", "2024-01-01T12:00:00Z")
+    # 3. Initialize workflow state
+    print("🆕 Starting document workflow")
+    station_agent.state.set("document_workflow_thread_id", configuration.get("thread_id"))
+    station_agent.state.set("workflowStartTime", "2024-01-01T12:00:00Z")
     
     # 4. Check server availability before starting
     server_status = station_agent.server.avail()

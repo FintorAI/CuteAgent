@@ -53,7 +53,7 @@ if [ -z "$1" ]; then
     echo ""
     echo "✅ EXAMPLES:"
     echo "  ./deploy.sh \"Fix StationAgent initialization bug\""
-    echo "  ./deploy.sh \"Add new uninterrupt method\""
+    echo "  ./deploy.sh \"Add new pause/unpause methods\""
     echo "  ./deploy.sh \"Update documentation\""
     echo "  ./deploy.sh \"Add new dependency\""
     echo ""

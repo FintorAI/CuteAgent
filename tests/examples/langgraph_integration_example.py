@@ -217,27 +217,25 @@ async def resume_check_node(state: State, config) -> State:
     )
     
     try:
-        # Check if this workflow was interrupted
-        resume_info = station_agent.uninterrupt("main_workflow")
+        # Check workflow state for coordination (replaces uninterrupt functionality)
+        print("🆕 Checking workflow coordination state")
         
-        if "resumeFrom" in resume_info:
-            thread_id = resume_info["resumeFrom"]
-            print(f"🔄 Workflow can be resumed from thread: {thread_id}")
-            
-            # Sync shared state to get the latest data
-            station_agent.state.sync_all(state)
-            
-            # You could set state.current_node based on where to resume
-            resume_node = state.sharedState.get("lastCompletedNode", 1)
-            state.current_node = resume_node
-            
+        # Sync shared state to get the latest data
+        station_agent.state.sync_all(state)
+        
+        # Check if there's existing workflow state
+        existing_workflow = state.sharedState.get("main_workflow_status")
+        if existing_workflow == "paused":
+            print("🔄 Found paused workflow, can use unpause() to resume")
+            # You could use agent.unpause(pause_tag) here
         else:
             print("🆕 Starting new workflow")
-            # Set thread ID for potential future resume
+            # Set workflow status for coordination
+            station_agent.state.set("main_workflow_status", "active")
             station_agent.state.set("main_workflow_thread_id", configuration.get("thread_id"))
         
     except Exception as e:
-        logging.error(f"Error checking resume state: {e}")
+        logging.error(f"Error checking workflow state: {e}")
     
     return state
 
@@ -253,7 +251,7 @@ def main():
     print("   4. Use agent.state.sync('variable', state) for specific variables") 
     print("   5. Use agent.state.set() to update shared state")
     print("   6. Use agent.server.load/unload() for workflow coordination")
-    print("   7. Use agent.uninterrupt() to handle workflow resumption")
+    print("   7. Use agent.pause()/unpause() to handle workflow coordination")
     print()
     print("🔧 Configuration needed:")
     print("   - shared_state_token: API token for SharedState")

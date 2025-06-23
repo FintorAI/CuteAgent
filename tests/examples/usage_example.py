@@ -146,21 +146,18 @@ def demonstrate_correct_usage():
     # 5. Task management
     print("📋 Task management...")
     
-    # Set a task thread ID for testing uninterrupt
+    # Test pause/unpause functionality (replaces uninterrupt)
     try:
-        agent.state.set("example_task_thread_id", "thread-789")
-        print("   ✅ Set task thread ID")
+        # Test pause functionality
+        pause_result = agent.pause("example_pause_tag")
+        print(f"   Pause result: {pause_result}")
         
-        # Test uninterrupt
-        resume_info = agent.uninterrupt("example_task")
-        print(f"   Resume info: {resume_info}")
-        
-        # Test with non-existent task
-        resume_info2 = agent.uninterrupt("nonexistent_task")
-        print(f"   Non-existent task: {resume_info2}")
+        # Test unpause functionality  
+        unpause_result = agent.unpause("example_pause_tag")
+        print(f"   Unpause result: {unpause_result}")
         
     except Exception as e:
-        print(f"   ❌ Error in task management: {e}")
+        print(f"   ❌ Error in pause/unpause operations: {e}")
     print()
     
     # 6. Advanced operations

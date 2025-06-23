@@ -329,7 +329,7 @@ StationAgent provides shared state management and server coordination for LangGr
 
 - **State Management** (`agent.state.*`)
 - **Server Management** (`agent.server.*`) 
-- **Task Management** (`agent.uninterrupt()`)
+- **Pause/Unpause Management** (`agent.pause()`, `agent.unpause()`)
 
 ---
 
@@ -643,36 +643,6 @@ if status["server"] == "idle":
     print("Server is available")
 else:
     print(f"Server busy with: {status['serverThread']}")
-```
-
----
-
-## Task Management API
-
-### `agent.uninterrupt(task_type)`
-
-Get the thread ID for resuming interrupted tasks.
-
-**Parameters:**
-- `task_type` (str): Type of task to resume
-
-**Returns:**
-- Dict with resume information:
-  - Found: `{"resumeFrom": "thread-id"}`
-  - Not found: `{"error": "Thread ID not found"}`
-
-**Example:**
-```python
-resume_info = agent.uninterrupt("main_workflow")
-if "resumeFrom" in resume_info:
-    thread_id = resume_info["resumeFrom"]
-    print(f"Resuming workflow from thread: {thread_id}")
-    # Sync shared state to get latest data
-    state = agent.state.sync_all(state)
-else:
-    print("Starting new workflow")
-    # Set thread ID for future resume capability
-    agent.state.set("main_workflow_thread_id", config["thread_id"])
 ```
 
 ---

@@ -311,20 +311,20 @@ class StationAgentRealTester:
             self.agent.state.set(thread_var, thread_value)
             self.created_variables.append(thread_var)
             
-            # Test uninterrupt with existing thread ID
-            result = self.agent.uninterrupt(task_type)
-            passed = isinstance(result, dict) and result.get("resumeFrom") == thread_value
-            self.log_test("Uninterrupt With Thread ID", passed, f"Uninterrupt result: {result}")
+            # Test pause functionality
+            result = self.agent.pause("dev_test_pause_tag")
+            passed = isinstance(result, dict) and "success" in result
+            self.log_test("Pause Functionality", passed, f"Pause result: {result}")
         except Exception as e:
-            self.log_test("Uninterrupt With Thread ID", False, f"Uninterrupt test failed: {e}")
+            self.log_test("Pause Functionality", False, f"Pause test failed: {e}")
         
-        # Test 2: Test uninterrupt with non-existent thread ID
+        # Test 2: Test unpause functionality
         try:
-            result = self.agent.uninterrupt("dev_nonexistent_workflow")
-            expected_error = "error" in result and "not found" in result["error"].lower()
-            self.log_test("Uninterrupt Without Thread ID", expected_error, f"Uninterrupt for non-existent: {result}")
+            result = self.agent.unpause("dev_test_pause_tag")
+            passed = isinstance(result, dict) and "success" in result
+            self.log_test("Unpause Functionality", passed, f"Unpause result: {result}")
         except Exception as e:
-            self.log_test("Uninterrupt Without Thread ID", False, f"Uninterrupt non-existent failed: {e}")
+            self.log_test("Unpause Functionality", False, f"Unpause test failed: {e}")
     
     def test_complex_workflows(self):
         """Test complex workflow scenarios."""
@@ -399,16 +399,16 @@ class StationAgentRealTester:
             self.agent.state.push(interrupt_data)
             self.created_variables.append("dev_interrupt_workflow_thread_id")
             
-            # Test resuming from interruption
-            resume_result = self.agent.uninterrupt("dev_interrupt_workflow")
+            # Test pause/unpause coordination (replaces uninterrupt)
+            pause_result = self.agent.pause("dev_interrupt_workflow_tag")
             
             passed = (
                 isinstance(server_status, dict) and
-                isinstance(resume_result, dict)
+                isinstance(pause_result, dict)
             )
             
             self.log_test("Concurrent Workflow Scenario", passed, 
-                         f"Server status: {server_status}, Resume: {resume_result}")
+                         f"Server status: {server_status}, Pause: {pause_result}")
             
         except Exception as e:
             self.log_test("Concurrent Workflow Scenario", False, f"Concurrent scenario failed: {e}")

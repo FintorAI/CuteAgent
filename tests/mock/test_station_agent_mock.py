@@ -386,27 +386,28 @@ class TestStationAgentMock(unittest.TestCase):
         self.assertEqual(result, expected)
     
     @patch.object(StationAgent.State, 'get')
-    def test_uninterrupt_success(self, mock_get):
-        """Test successful uninterrupt operation."""
-        # Mock thread ID exists
-        mock_get.return_value = "thread-123"
-        
-        result = self.agent.uninterrupt("test_task")
-        
-        expected = {"resumeFrom": "thread-123"}
-        self.assertEqual(result, expected)
-        mock_get.assert_called_with("test_task_thread_id")
-    
-    @patch.object(StationAgent.State, 'get')
-    def test_uninterrupt_not_found(self, mock_get):
-        """Test uninterrupt when thread ID doesn't exist."""
-        # Mock thread ID doesn't exist
+    @patch.object(StationAgent.State, 'set')
+    def test_pause_success(self, mock_set, mock_get):
+        """Test successful pause operation."""
+        # Mock pause tag not in use
         mock_get.return_value = None
+        mock_set.return_value = True
         
-        result = self.agent.uninterrupt("nonexistent_task")
+        result = self.agent.pause("test_pause_tag")
         
-        expected = {"error": "Thread ID not found"}
-        self.assertEqual(result, expected)
+        # Should return success status
+        self.assertIn("success", result)
+        
+    @patch.object(StationAgent.State, 'get')
+    def test_unpause_success(self, mock_get):
+        """Test successful unpause operation."""
+        # Mock pause tag is paused
+        mock_get.return_value = "paused"
+        
+        result = self.agent.unpause("test_pause_tag")
+        
+        # Should return success status 
+        self.assertIn("success", result)
     
     @patch('requests.Session.request')
     def test_network_error_retry(self, mock_request):
