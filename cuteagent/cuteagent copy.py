@@ -120,6 +120,21 @@ class WindowsAgent:
             print(f"Error in act operation: {e}")
             return result
 
+    # def pause(self, seconds: float):
+    #     """Pauses execution for the specified number of seconds.
+        
+    #     Args:
+    #         seconds (float): Number of seconds to pause
+    #     """
+    #     try:
+    #         if not isinstance(seconds, (int, float)) or seconds < 0:
+    #             raise ValueError("Seconds must be a non-negative number")
+                
+    #         time.sleep(seconds)
+    #         return True
+    #     except Exception as e:
+    #         print(f"Error in pause operation: {e}")
+    #         return False
 
     def click_cached_element(self, task_type: str, element_name: str):
         """Click on an element using cached coordinates from the API.
@@ -1099,98 +1114,106 @@ class StationAgent:
     
 
 
-    def pause(self, pause_tag: str, interrupt_func=None) -> Dict:
+    def pause(self, pause_tag: str) -> Dict:
         """
-        Simple pause method that works with LangGraph's interrupt function.
+        Pause an already initiated StationAgent by interrupting the graph with a pause tag.
+        
+        This method uses LangGraph's built-in interrupt() function and is designed to be 
+        called from within a LangGraph node execution.
         
         Args:
             pause_tag (str): The pause tag identifier
-            interrupt_func (callable, optional): The LangGraph interrupt function. 
-                                               If not provided, returns interrupt info for manual handling.
             
         Returns:
             Dict: Status information about the pause operation
         """
-        print(f"🔄 Pausing graph with tag: '{pause_tag}'")
+        print(f"Attempting to pause with tag: '{pause_tag}'")
         
-        # Step 1: Check if pause_tag is already in use
+        # Step 1: Check if pause_tag-waitpoint exists and is "paused"
         waitpoint_var = f"{pause_tag}-waitpoint"
         waitpoint_status = self.state.get(waitpoint_var)
         
         if waitpoint_status == "paused":
-            return {
-                "success": False, 
-                "status": "tagInUse", 
-                "error": f"Pause tag '{pause_tag}' is already in use"
-            }
+            return {"success": False, "status": "tagInUse", "error": f"Pause tag '{pause_tag}' is already in use"}
         
-        # Step 2: Store context information in SharedState
+        # Step 2: Store waitpoint variables for unpause functionality
+        graph_url = self.current_graph_url or self.state.get("current-graph-url")
+        graph_assistant_id = self.current_graph_assistant_id or self.state.get("current-graph-assistant-id")
+        
+        waitpoint_url_var = f"{pause_tag}-waitpoint-url"
+        waitpoint_assistant_var = f"{pause_tag}-waitpoint-assistant"
+        waitpoint_thread_var = f"{pause_tag}-waitpoint-threadId"
+        waitpoint_apikey_var = f"{pause_tag}-waitpoint-apikey"
+        
         try:
-            # Store pause context variables individually with unique names
-            self.state.set(f"{pause_tag}-waitpoint-description", f"Graph paused at checkpoint: {pause_tag}")
-            self.state.set(f"{pause_tag}-waitpoint-timestamp", time.time())
+            # Store pause information in shared state for unpause functionality
+            self.state.set(waitpoint_url_var, graph_url)
+            self.state.set(waitpoint_assistant_var, graph_assistant_id)
+            self.state.set(waitpoint_thread_var, self.graph_thread_id)
+            self.state.set(waitpoint_apikey_var, self.langgraph_token)
             
-            # Store waitpoint variables individually for resume functionality
-            self.state.set(f"{pause_tag}-waitpoint-url", self.current_graph_url)
-            self.state.set(f"{pause_tag}-waitpoint-assistant", self.current_graph_assistant_id)
-            self.state.set(f"{pause_tag}-waitpoint-threadId", self.graph_thread_id)
-            self.state.set(f"{pause_tag}-waitpoint-apikey", self.langgraph_token)
-            
-            print("✅ Pause context stored in SharedState as individual variables")
-            
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Failed to store pause context: {str(e)}"
-            }
-        
-        # Step 3: Handle the interrupt
-        if interrupt_func is not None:
-            # Direct interrupt approach - call the function
+            # Step 3: Use LangGraph's built-in interrupt function
             try:
+                import inspect
+                
+                # Find the interrupt function in the caller's context
+                frame = inspect.currentframe().f_back
+                interrupt_func = None
+                
+                # Check caller's globals for interrupt function
+                if frame and 'interrupt' in frame.f_globals and callable(frame.f_globals['interrupt']):
+                    interrupt_func = frame.f_globals['interrupt']
+                
+                if not interrupt_func:
+                    # Fallback: check current frame's globals
+                    frame = inspect.currentframe()
+                    while frame:
+                        if 'interrupt' in frame.f_globals and callable(frame.f_globals['interrupt']):
+                            interrupt_func = frame.f_globals['interrupt']
+                            break
+                        frame = frame.f_back
+                
+                if not interrupt_func:
+                    return {"success": False, "error": "interrupt function not found - ensure this is called from within a LangGraph node"}
+                
+                # Prepare interrupt info
                 interrupt_info = {
                     "pause_tag": pause_tag,
                     "question_text": f"Graph paused with tag: {pause_tag}",
                     "expected_format": "Resume command or nextstep: Proceed"
                 }
                 
-                print(f"🔄 Calling interrupt function for tag: {pause_tag}")
+                # Use built-in interrupt (NO AWAIT!)
                 human_response = interrupt_func(interrupt_info)
                 
-                # Mark as paused and return success
+                # Step 4: Mark as paused in shared state
                 self.state.set(waitpoint_var, "paused")
                 
+                print(f"Successfully paused graph with tag: {pause_tag}")
                 return {
                     "success": True,
                     "status": "paused",
                     "pause_tag": pause_tag,
-                    "message": f"Graph successfully paused with tag '{pause_tag}'",
-                    "human_response": human_response
+                    "thread_id": self.graph_thread_id,
+                    "response": human_response,
+                    "message": f"Graph successfully paused with tag '{pause_tag}'"
                 }
                 
             except Exception as e:
-                return {
-                    "success": False,
-                    "error": f"Interrupt function failed: {str(e)}"
-                }
-        else:
-            # Return interrupt info for manual handling
-            interrupt_info = {
-                "pause_tag": pause_tag,
-                "question_text": f"Graph paused with tag: {pause_tag}",
-                "expected_format": "Resume command or nextstep: Proceed"
-            }
-            
-            # Mark as paused
-            self.state.set(waitpoint_var, "paused")
-            
-            return {
-                "success": True,
-                "status": "ready_for_interrupt",
-                "pause_tag": pause_tag,
-                "interrupt_info": interrupt_info,
-                "message": f"Pause setup complete for tag '{pause_tag}'. Call interrupt() manually with the provided interrupt_info."
-            }
+                # Clean up waitpoint variables if interrupt failed
+                self.state.delete(waitpoint_url_var)
+                self.state.delete(waitpoint_assistant_var)
+                self.state.delete(waitpoint_thread_var)
+                self.state.delete(waitpoint_apikey_var)
+                
+                error_message = f"Error with LangGraph interrupt: {str(e)}"
+                print(f"ERROR: {error_message}")
+                return {"success": False, "error": error_message}
+                
+        except Exception as e:
+            error_message = f"Error setting waitpoint variables: {str(e)}"
+            print(f"ERROR: {error_message}")
+            return {"success": False, "error": error_message}
 
     def unpause(self, pause_tag: str, resume_payload: str = "nextstep: Proceed") -> Dict:
         """
@@ -1271,15 +1294,10 @@ class StationAgent:
             
             # Optional: Clean up waitpoint variables after successful unpause
             try:
-                # Clean up the main waitpoint variables
                 self.state.delete(waitpoint_url_var)
                 self.state.delete(waitpoint_assistant_var)
                 self.state.delete(waitpoint_thread_var)
                 self.state.delete(waitpoint_apikey_var)
-                
-                # Clean up the additional context variables created by pause
-                self.state.delete(f"{pause_tag}-waitpoint-description")
-                self.state.delete(f"{pause_tag}-waitpoint-timestamp")
             except Exception as cleanup_error:
                 print(f"Warning: Could not clean up waitpoint variables: {cleanup_error}")
             
