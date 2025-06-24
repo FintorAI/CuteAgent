@@ -647,6 +647,84 @@ else:
 
 ---
 
+## Pause/Unpause Management API
+
+### `agent.pause(reason=None)`
+
+Pause the agent's execution and update the shared state with pause information.
+
+**Parameters:**
+- `reason` (str, optional): Descriptive reason for pausing. Defaults to "Agent paused for manual intervention."
+
+**Returns:**
+- Dict with pause status:
+  - Success: `{"status": "paused", "reason": reason, "pausedAt": timestamp}`
+  - Error: `{"status": "error", "error": "error_message"}`
+
+**Example:**
+```python
+# Basic pause
+result = agent.pause()
+print(f"Paused: {result['status']}")
+
+# Pause with custom reason
+result = agent.pause("Waiting for user input on complex decision")
+if result["status"] == "paused":
+    print(f"Paused: {result['reason']}")
+```
+
+### `agent.unpause()`
+
+Unpause the agent's execution by removing pause information from shared state.
+
+**Parameters:**
+- None
+
+**Returns:**
+- Dict with unpause status:
+  - Success: `{"status": "unpaused", "unpausedAt": timestamp}`
+  - Already active: `{"status": "already_active", "message": "Agent is not paused"}`
+  - Error: `{"status": "error", "error": "error_message"}`
+
+**Example:**
+```python
+result = agent.unpause()
+if result["status"] == "unpaused":
+    print("Agent resumed execution")
+elif result["status"] == "already_active":
+    print("Agent was not paused")
+```
+
+### `agent.is_paused()`
+
+Check if the agent is currently paused.
+
+**Parameters:**
+- None
+
+**Returns:**
+- Dict with pause status:
+  - Paused: `{"paused": True, "reason": "pause_reason", "pausedAt": timestamp}`
+  - Not paused: `{"paused": False}`
+  - Error: `{"paused": False, "error": "error_message"}`
+
+**Example:**
+```python
+status = agent.is_paused()
+if status["paused"]:
+    print(f"Agent is paused: {status['reason']}")
+    print(f"Paused since: {status['pausedAt']}")
+else:
+    print("Agent is active")
+```
+
+**State Variables Used:**
+- `is_paused` (bool): True when agent is paused, False otherwise
+- `pause_reason` (str): Reason for pausing
+- `paused_at` (str): ISO timestamp when agent was paused
+
+---
+
 ## Utility Methods
 
 ### `agent.validate_connection()`

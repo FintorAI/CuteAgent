@@ -155,6 +155,145 @@ report = agent.reporting(
 )
 ```
 
+## Pause/Unpause Management
+
+StationAgent provides pause and unpause functionality for workflow coordination and human intervention:
+
+```python
+from cuteagent import StationAgent
+import asyncio
+
+async def workflow_with_pause_control(state: State, config: RunnableConfig) -> State:
+    """Example of using pause/unpause for workflow control."""
+    
+    agent = StationAgent(
+        station_thread_id="workflow-123",
+        graph_thread_id=config.get("thread_id"),
+        token=config.get("shared_state_token"),
+        langgraph_token=config.get("langgraph_token")  # Required for pause/unpause
+    )
+    
+    # Check if workflow is currently paused
+    pause_status = await asyncio.to_thread(agent.is_paused)
+    
+    if pause_status["paused"]:
+        print(f"Workflow is paused: {pause_status['reason']}")
+        print(f"Paused since: {pause_status['pausedAt']}")
+        
+        # Workflow should wait or handle paused state
+        # In a real scenario, this might return early or wait
+        return state
+    
+    # Perform some work...
+    try:
+        # Complex operation that might need human intervention
+        result = perform_complex_operation()
+        
+        if result.needs_review:
+            # Pause for human review
+            pause_result = await asyncio.to_thread(
+                agent.pause, 
+                "Complex operation completed, needs human review before proceeding"
+            )
+            
+            if pause_result["status"] == "paused":
+                print(f"Workflow paused for review: {pause_result['reason']}")
+                # Store context for when workflow resumes
+                await asyncio.to_thread(agent.state.set, "pending_review_data", result.data)
+                await asyncio.to_thread(agent.state.set, "review_required", True)
+            
+            return state
+            
+    except Exception as e:
+        # Pause on error for investigation
+        pause_result = await asyncio.to_thread(
+            agent.pause, 
+            f"Workflow paused due to error: {str(e)}"
+        )
+        print(f"Workflow paused due to error: {e}")
+        return state
+    
+    # Continue normal workflow...
+    state.current_step = "completed"
+    return state
+
+async def resume_workflow_node(state: State, config: RunnableConfig) -> State:
+    """Node to handle resuming paused workflows."""
+    
+    agent = StationAgent(
+        station_thread_id=state.station_thread_id,
+        graph_thread_id=config.get("thread_id"),
+        token=config.get("shared_state_token"),
+        langgraph_token=config.get("langgraph_token")
+    )
+    
+    # Check if we're resuming from pause
+    pause_status = await asyncio.to_thread(agent.is_paused)
+    
+    if pause_status["paused"]:
+        # Human has reviewed, unpause the workflow
+        unpause_result = await asyncio.to_thread(agent.unpause)
+        
+        if unpause_result["status"] == "unpaused":
+            print(f"Workflow resumed at: {unpause_result['unpausedAt']}")
+            
+            # Retrieve context from when we paused
+            review_required = await asyncio.to_thread(agent.state.get, "review_required")
+            if review_required:
+                pending_data = await asyncio.to_thread(agent.state.get, "pending_review_data")
+                # Process the reviewed data
+                print("Processing reviewed data...")
+                
+                # Clean up pause-related state
+                await asyncio.to_thread(agent.state.delete, "review_required")
+                await asyncio.to_thread(agent.state.delete, "pending_review_data")
+        
+        elif unpause_result["status"] == "already_active":
+            print("Workflow was not paused")
+    
+    state.current_step = "resumed"
+    return state
+
+def example_pause_patterns():
+    """Common pause/unpause patterns for different scenarios."""
+    
+    # Pattern 1: Conditional pause based on data
+    async def conditional_pause_example(agent, complex_data):
+        if len(complex_data) > 100:
+            await asyncio.to_thread(
+                agent.pause, 
+                "Large dataset detected, manual review recommended"
+            )
+    
+    # Pattern 2: Error handling with pause
+    async def error_handling_pause_example(agent):
+        try:
+            risky_operation()
+        except CriticalError as e:
+            await asyncio.to_thread(
+                agent.pause, 
+                f"Critical error encountered: {e}. Manual intervention required."
+            )
+    
+    # Pattern 3: Scheduled pause for maintenance
+    async def maintenance_pause_example(agent):
+        current_time = datetime.now().hour
+        if 2 <= current_time <= 4:  # Maintenance window
+            await asyncio.to_thread(
+                agent.pause, 
+                "Scheduled maintenance window - workflow paused"
+            )
+    
+    # Pattern 4: Resource availability pause
+    async def resource_pause_example(agent):
+        server_status = await asyncio.to_thread(agent.server.avail)
+        if server_status["server"] == "busy":
+            await asyncio.to_thread(
+                agent.pause, 
+                "Required server is busy, pausing until available"
+            )
+```
+
 ## Complete Workflow Example
 
 ```python

@@ -1118,9 +1118,8 @@ class StationAgent:
         """
         Pause an already initiated StationAgent by interrupting the graph with a pause tag.
         
-        This method stores necessary information (URL, assistant ID, thread ID, and API key) 
-        in shared state variables so that the unpause() method can later resume the graph
-        using the LangGraph Thread Unpause API.
+        This method uses LangGraph's built-in interrupt() function and is designed to be 
+        called from within a LangGraph node execution.
         
         Args:
             pause_tag (str): The pause tag identifier
@@ -1130,55 +1129,64 @@ class StationAgent:
         """
         print(f"Attempting to pause with tag: '{pause_tag}'")
         
-        # Step 2: Check if pause_tag-waitpoint exists and is "paused"
+        # Step 1: Check if pause_tag-waitpoint exists and is "paused"
         waitpoint_var = f"{pause_tag}-waitpoint"
         waitpoint_status = self.state.get(waitpoint_var)
         
         if waitpoint_status == "paused":
             return {"success": False, "status": "tagInUse", "error": f"Pause tag '{pause_tag}' is already in use"}
         
-        # Step 3: Create waitpoint variables
-        # Use current graph URL and assistant ID if available, otherwise get from shared state
+        # Step 2: Store waitpoint variables for unpause functionality
         graph_url = self.current_graph_url or self.state.get("current-graph-url")
         graph_assistant_id = self.current_graph_assistant_id or self.state.get("current-graph-assistant-id")
         
-        if not graph_url or not graph_assistant_id:
-            return {"success": False, "error": "Current graph URL and assistant ID are required for pause functionality"}
-        
-        # Set waitpoint variables
         waitpoint_url_var = f"{pause_tag}-waitpoint-url"
         waitpoint_assistant_var = f"{pause_tag}-waitpoint-assistant"
         waitpoint_thread_var = f"{pause_tag}-waitpoint-threadId"
         waitpoint_apikey_var = f"{pause_tag}-waitpoint-apikey"
         
         try:
-            # Store pause information in shared state (including API key for unpause)
+            # Store pause information in shared state for unpause functionality
             self.state.set(waitpoint_url_var, graph_url)
             self.state.set(waitpoint_assistant_var, graph_assistant_id)
             self.state.set(waitpoint_thread_var, self.graph_thread_id)
             self.state.set(waitpoint_apikey_var, self.langgraph_token)
             
-            # Step 4: Interrupt the graph
+            # Step 3: Use LangGraph's built-in interrupt function
             try:
-                from langgraph_sdk import get_sync_client
-                from langgraph_sdk.schema import Command
-            except ImportError as e:
-                return {"success": False, "error": f"Failed to import LangGraph SDK: {str(e)}"}
-            
-            if not self.langgraph_token:
-                return {"success": False, "error": "LangGraph token is required for pause functionality"}
-            
-            try:
-                client = get_sync_client(url=graph_url, api_key=self.langgraph_token)
+                import inspect
                 
-                # Interrupt with pause_tag
-                human_response = client.runs.interrupt(
-                    thread_id=self.graph_thread_id,
-                    assistant_id=graph_assistant_id,
-                    interrupt_value={pause_tag: pause_tag}
-                )
+                # Find the interrupt function in the caller's context
+                frame = inspect.currentframe().f_back
+                interrupt_func = None
                 
-                # Step 5: If successful, mark as paused
+                # Check caller's globals for interrupt function
+                if frame and 'interrupt' in frame.f_globals and callable(frame.f_globals['interrupt']):
+                    interrupt_func = frame.f_globals['interrupt']
+                
+                if not interrupt_func:
+                    # Fallback: check current frame's globals
+                    frame = inspect.currentframe()
+                    while frame:
+                        if 'interrupt' in frame.f_globals and callable(frame.f_globals['interrupt']):
+                            interrupt_func = frame.f_globals['interrupt']
+                            break
+                        frame = frame.f_back
+                
+                if not interrupt_func:
+                    return {"success": False, "error": "interrupt function not found - ensure this is called from within a LangGraph node"}
+                
+                # Prepare interrupt info
+                interrupt_info = {
+                    "pause_tag": pause_tag,
+                    "question_text": f"Graph paused with tag: {pause_tag}",
+                    "expected_format": "Resume command or nextstep: Proceed"
+                }
+                
+                # Use built-in interrupt (NO AWAIT!)
+                human_response = interrupt_func(interrupt_info)
+                
+                # Step 4: Mark as paused in shared state
                 self.state.set(waitpoint_var, "paused")
                 
                 print(f"Successfully paused graph with tag: {pause_tag}")
@@ -1187,6 +1195,7 @@ class StationAgent:
                     "status": "paused",
                     "pause_tag": pause_tag,
                     "thread_id": self.graph_thread_id,
+                    "response": human_response,
                     "message": f"Graph successfully paused with tag '{pause_tag}'"
                 }
                 
@@ -1197,7 +1206,7 @@ class StationAgent:
                 self.state.delete(waitpoint_thread_var)
                 self.state.delete(waitpoint_apikey_var)
                 
-                error_message = f"Error interrupting graph: {str(e)}"
+                error_message = f"Error with LangGraph interrupt: {str(e)}"
                 print(f"ERROR: {error_message}")
                 return {"success": False, "error": error_message}
                 

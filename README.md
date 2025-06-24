@@ -76,7 +76,7 @@ async def your_langgraph_node(state: State, config: RunnableConfig) -> State:
         station_thread_id=state.stationThreadId,
         graph_thread_id=config.get("thread_id"),
         token=config.get("shared_state_token", "your-api-token"),
-        langgraph_token=config.get("langgraph_token")  # Required for uninterrupt functionality
+        langgraph_token=config.get("langgraph_token")  # Required for pause/unpause functionality
     )
     # 🔄 Agent now has agent.initial_state with any existing variables
     
