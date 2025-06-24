@@ -1,6 +1,6 @@
 [project]
 name = "cuteagent"
-version = "0.2.14"
+version = "0.2.15"
 dynamic = [
     "dependencies",
 ]
@@ -53,7 +53,7 @@ universal = true
 
 
 [tool.bumpversion]
-current_version = "0.2.14"
+current_version = "0.2.15"
 commit = true
 tag = true
 
