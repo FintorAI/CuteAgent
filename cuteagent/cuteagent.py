@@ -5,6 +5,7 @@ import re
 import os
 import requests
 import json
+import asyncio
 from openai import OpenAI
 from dotenv import load_dotenv
 from typing import Dict, Union, Optional, Any
@@ -1099,77 +1100,38 @@ class StationAgent:
     
 
 
-    def pause(self, pause_tag: str, interrupt_func=None) -> Dict:
+    async def pause(self, pause_tag: str, interrupt_func=None) -> Dict:
         """
-        Fixed pause method that works correctly with LangGraph's interrupt mechanism.
-        
-        Key insight: interrupt() is a two-phase operation:
-        Phase 1: interrupt() raises exception -> graph pauses -> waits for resume
-        Phase 2: graph resumes via unpause() -> interrupt() returns resume value
-        
-        Args:
-            pause_tag (str): The pause tag identifier
-            interrupt_func (callable, optional): The LangGraph interrupt function
-            
-        Returns:
-            Dict: Status information about the pause operation
+        Complete pause method that handles everything internally.
+        Uses asyncio.to_thread() internally for SharedState operations,
+        but calls interrupt() in the main thread context.
         """
         print(f"🔄 Pausing graph with tag: '{pause_tag}'")
         
-        # Step 1: Check if this is a resume situation (after unpause was called)
-        resume_var = f"{pause_tag}-resume-value"
-        resume_value = self.state.get(resume_var)
-        
-        if resume_value is not None:
-            # This is a resume situation - we're being called after unpause()
-            print(f"✅ Resume detected for tag '{pause_tag}' with value: {resume_value}")
-            
-            # Clean up resume variables
-            try:
-                self.state.delete(resume_var)
-                self.state.delete(f"{pause_tag}-waitpoint")
-            except:
-                pass  # Ignore cleanup errors
-                
-            return {
-                "success": True,
-                "status": "resumed",
-                "pause_tag": pause_tag,
-                "message": f"Graph successfully resumed from tag '{pause_tag}'",
-                "human_response": resume_value
-            }
-        
-        # Step 2: Check if pause_tag is already in use
-        waitpoint_var = f"{pause_tag}-waitpoint"
-        waitpoint_status = self.state.get(waitpoint_var)
-        
-        if waitpoint_status == "paused":
-            return {
-                "success": False, 
-                "status": "tagInUse", 
-                "error": f"Pause tag '{pause_tag}' is already in use"
-            }
-        
-        # Step 3: Store context information BEFORE calling interrupt
+        # PART 1: Check if this is a resume situation first
         try:
-            import time
-            
-            # Store waitpoint variables for unpause() functionality
-            self.state.set(f"{pause_tag}-waitpoint-url", self.current_graph_url)
-            self.state.set(f"{pause_tag}-waitpoint-assistant", self.current_graph_assistant_id)
-            self.state.set(f"{pause_tag}-waitpoint-threadId", self.graph_thread_id)
-            self.state.set(f"{pause_tag}-waitpoint-apikey", self.langgraph_token)
-            self.state.set(f"{pause_tag}-waitpoint-timestamp", time.time())
-            
-            print("✅ Pause context stored for unpause() functionality")
-            
+            resume_value = await asyncio.to_thread(self.state.get, f"{pause_tag}-resume-value")
+            if resume_value is not None:
+                # This is a resume - clean up and return (no preparation needed)
+                await asyncio.to_thread(self._cleanup_resume, pause_tag)
+                return {
+                    "success": True,
+                    "status": "resumed", 
+                    "human_response": resume_value,
+                    "message": f"Resumed from tag '{pause_tag}'"
+                }
         except Exception as e:
-            return {
-                "success": False,
-                "error": f"Failed to store pause context: {str(e)}"
-            }
+            return {"success": False, "error": f"Failed to check resume status: {str(e)}"}
         
-        # Step 4: Handle the interrupt mechanism
+        # PART 2: Preparation (in thread) - only if not a resume
+        try:
+            # Use asyncio.to_thread() internally for sync SharedState operations
+            await asyncio.to_thread(self._prepare_pause_context, pause_tag)
+            print("✅ Pause context prepared")
+        except Exception as e:
+            return {"success": False, "error": f"Failed to prepare pause context: {str(e)}"}
+        
+        # PART 3: Call interrupt() directly (in main thread) - sync operation
         if interrupt_func is not None:
             try:
                 interrupt_info = {
@@ -1178,63 +1140,65 @@ class StationAgent:
                     "expected_format": "Resume command or use unpause() method"
                 }
                 
-                print(f"🔄 Calling interrupt function for tag: {pause_tag}")
+                print(f"🔄 Calling interrupt() directly for tag: {pause_tag}")
                 
-                # Mark as paused BEFORE calling interrupt
-                self.state.set(waitpoint_var, "paused")
-                
-                # CRITICAL: Call interrupt() - this raises exception and pauses graph
-                # When unpause() is called, it will resume the graph and this will return the value
+                # CRITICAL: This runs in main thread - no asyncio.to_thread()
                 human_response = interrupt_func(interrupt_info)
                 
-                # THIS CODE ONLY RUNS AFTER unpause() RESUMES THE GRAPH
-                print(f"🎉 Graph resumed! Received: {human_response}")
+                # THIS CODE RUNS AFTER RESUME
+                print(f"🎉 Graph resumed! Human provided: {human_response}")
                 
-                # Mark as completed and store response
-                self.state.set(waitpoint_var, "completed")
-                self.state.set(f"{pause_tag}-human-response", str(human_response))
+                # PART 4: Cleanup (in thread) - async operation
+                await asyncio.to_thread(self._finalize_pause, pause_tag, human_response)
                 
                 return {
                     "success": True,
                     "status": "completed",
                     "pause_tag": pause_tag,
-                    "message": f"Graph successfully paused and resumed with tag '{pause_tag}'",
+                    "message": f"Successfully paused and resumed with tag '{pause_tag}'",
                     "human_response": human_response
                 }
                 
             except Exception as e:
-                # CRITICAL: Check if this is the expected Interrupt exception
                 exception_name = type(e).__name__
                 if "Interrupt" in exception_name:
-                    print(f"✅ Graph interrupted successfully with tag: {pause_tag}")
-                    print(f"Exception: {exception_name} (expected - graph paused, waiting for unpause)")
-                    
-                    # DON'T CATCH THE EXCEPTION - re-raise it so graph pauses
+                    print(f"✅ Graph interrupted - waiting for unpause()")
+                    # Re-raise so graph pauses
                     raise e
                 else:
-                    # Unexpected exception
-                    print(f"❌ Unexpected exception during interrupt: {e}")
-                    return {
-                        "success": False,
-                        "error": f"Unexpected error during interrupt: {str(e)}"
-                    }
+                    return {"success": False, "error": f"Unexpected error: {str(e)}"}
         else:
-            # Manual interrupt handling
-            interrupt_info = {
-                "pause_tag": pause_tag,
-                "question_text": f"Graph paused with tag: {pause_tag}",
-                "expected_format": "Use unpause() method to resume"
-            }
-            
-            self.state.set(waitpoint_var, "paused")
-            
-            return {
-                "success": True,
-                "status": "ready_for_interrupt",
-                "pause_tag": pause_tag,
-                "interrupt_info": interrupt_info,
-                "message": f"Pause setup complete for tag '{pause_tag}'. Use unpause() method to resume."
-            }
+            return {"success": False, "error": "No interrupt function provided"}
+
+    def _prepare_pause_context(self, pause_tag: str):
+        """Sync helper method for pause preparation (runs in thread)"""
+        import time
+        
+        # Check if already in use
+        waitpoint_var = f"{pause_tag}-waitpoint"
+        if self.state.get(waitpoint_var) == "paused":
+            raise Exception(f"Pause tag '{pause_tag}' already in use")
+        
+        # Store context
+        self.state.set(f"{pause_tag}-waitpoint-url", self.current_graph_url)
+        self.state.set(f"{pause_tag}-waitpoint-assistant", self.current_graph_assistant_id)
+        self.state.set(f"{pause_tag}-waitpoint-threadId", self.graph_thread_id)
+        self.state.set(f"{pause_tag}-waitpoint-apikey", self.langgraph_token)
+        self.state.set(f"{pause_tag}-waitpoint-timestamp", time.time())
+        self.state.set(waitpoint_var, "paused")
+
+    def _cleanup_resume(self, pause_tag: str):
+        """Sync helper method for resume cleanup (runs in thread)"""
+        try:
+            self.state.delete(f"{pause_tag}-resume-value")
+            self.state.delete(f"{pause_tag}-waitpoint")
+        except:
+            pass  # Ignore cleanup errors
+
+    def _finalize_pause(self, pause_tag: str, human_response: str):
+        """Sync helper method for pause finalization (runs in thread)"""
+        self.state.set(f"{pause_tag}-waitpoint", "completed")
+        self.state.set(f"{pause_tag}-human-response", str(human_response))
 
     def unpause(self, pause_tag: str, resume_payload: str = "nextstep: Proceed") -> Dict:
         """
