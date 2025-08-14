@@ -16,9 +16,66 @@
 
 - **🤖 StationAgent**: Shared state management and workflow coordination
 - **🖥️ WindowsAgent**: Computer use automation on Windows servers  
+- **🧭 VisionAgent**: Vision model integration for GUI element grounding and coordinate extraction
 - **👥 HumanAgent**: Human-in-the-loop (HITL) task management
 
 Together, these agents enable complete automation workflows where AI performs computer tasks, humans provide oversight and decisions, and shared state coordinates everything seamlessly.
+
+## 🧭 VisionAgent - Vision Grounding and GUI Coordinate Extraction
+
+**VisionAgent** integrates with vision models to locate UI elements in screenshots and return click coordinates.
+
+### 🚀 Key Features
+
+- Claude Integration: Send a screenshot and element description to Claude and get grounded coordinates
+- Hugging Face GUI Model: Use OpenAI-compatible endpoint to parse GUI and extract coordinates via `find_element`
+- Screen Scaling: Converts model coordinates to your actual screen resolution
+
+### 🔧 Quick Start
+
+```python
+from cuteagent import VisionAgent
+
+# Initialize with screen size and optional Anthropic API key via env
+# export ANTHROPIC_API_KEY=... in your environment or .env
+vision = VisionAgent(screen_size=(1366, 768))
+
+# Claude grounding: description + image URL → (x,y)
+image_url = "https://datacollectionfintor.s3.amazonaws.com/screenshot_20250517_180131.png"
+description = {
+    "name": "Reports",
+    "description": "Reports tab on the top navigation bar",
+    "element_type": "tab"
+}
+coords = vision.claude(image_url, description)
+print("Claude coordinates:", coords)  # e.g. "(339,66)" or "NOT FOUND" or "ERROR: ..."
+
+# Hugging Face GUI model: element name + screenshot URL
+vision_hf = VisionAgent(model_selected="FINTOR_GUI")
+coords_hf = vision_hf.find_element(
+    screenshot_url=image_url,
+    element_name="click on Reports tab on navigation bar"
+)
+print("HF model coordinates:", coords_hf)
+```
+
+### ⚙️ Configuration
+
+```bash
+# Anthropic (Claude) - required for VisionAgent.claude
+export ANTHROPIC_API_KEY="your-anthropic-key"
+
+# Hugging Face GUI endpoint (optional; defaults are provided)
+export HF_TOKEN="your-hf-token"
+```
+
+### 📝 Notes
+
+- `VisionAgent.claude(...)` returns:
+  - "(x,y)" coordinate string on success
+  - "NOT FOUND" if element cannot be grounded
+  - "ERROR: ..." for explicit error messaging (e.g., missing key, invalid media type)
+- Coordinates are clamped to your `screen_size` and converted if the model returns a different reference size.
 
 ## 📦 Installation
 

@@ -2,4 +2,5 @@ numpy
 gradio_client
 openai
 python-dotenv 
-langgraph-sdk 
+langgraph-sdk
+anthropic 
