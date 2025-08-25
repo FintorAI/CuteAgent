@@ -1525,3 +1525,378 @@ class StationAgent:
 			print(f"ERROR: {error_message}")
 			return {"success": False, "error": error_message}
 
+class DocumentAgent:
+    def __init__(self):
+        """Initialize DocumentAgent with nested ESFuse class."""
+        self.ESFuse = self.ESFuse(self)  # Initialize the nested class
+    
+    class ESFuse:
+        """Nested class for ESFuse functionality with multiple sub-functions."""
+        
+        def __init__(self, agent: 'DocumentAgent'):
+            self.agent = agent
+
+
+        def pull_data(self, client_id: str, loan_id: str, doc_id: str, esfuse_token: str, get_api_url: str):
+            """
+            Makes an API call to retrieve loan data and extracts specific fields using simple mapping.
+                
+            Args:
+                client_id (str): The client ID for the loan
+                loan_id (str): The loan ID to retrieve
+                doc_id (str): The document ID to retrieve
+                esfuse_token (str): The ESFuse authentication token
+                get_api_url (str): The base URL for the ESFuse API
+                extraction_rules (dict, optional): Custom rules for what data to extract. If None, uses default rules.
+                    
+            Returns:
+                dict: JSON object containing the extracted data or error information
+            """
+            try:
+                if not client_id or not loan_id or not doc_id or not esfuse_token:
+                    return {
+                        "success": False,
+                        "error": "client_id, loan_id, doc_id, and esfuse_token are required"
+                    }
+                
+                api_url = f"{get_api_url}/doc?clientId={client_id}&docId={doc_id}"
+                
+                # Set up headers with the ESFuse token
+                headers = {
+                    "Authorization": f"Bearer {esfuse_token}",
+                    "Content-Type": "application/json"
+                }
+                
+
+                
+                # Make the API call
+                response = requests.get(api_url, headers=headers, timeout=30)
+                
+                # Check if the request was successful
+                if response.status_code == 200:
+                    response_data = response.json()
+                    # Extract the loan data from the 'dataObject' key
+                    if 'dataObject' in response_data:
+                        json_data = response_data['dataObject']
+                    else:
+                        json_data = response_data
+                else:
+                    return {
+                        "success": False,
+                        "error": f"API call failed with status {response.status_code}: {response.text}"
+                    }
+                
+                # Simple field mapping - similar to jq in your curl example
+                extraction_rules = {
+                    "hasDataObject": "hasDataObject",
+                    "extracted_at": "dataObject.extracted_at",
+                    "source": "dataObject.source",
+                    "reportIssued": "dataObject.fields.reportIssued",
+                    "applicant1": "dataObject.fields.applicant1",
+                    "address": "dataObject.fields.address"
+                }
+                
+                # Extract data using simple field mapping
+                extracted_data = {}
+                
+                for field_name, field_path in extraction_rules.items():
+                    # Get the value using the field path
+                    field_value = self._get_simple_value(json_data, field_path)
+                    extracted_data[field_name] = field_value
+                
+                
+                # Add the raw API response for debugging
+                result = extracted_data.copy()
+                result['_raw_response'] = response_data
+                
+                return result
+                
+            except requests.exceptions.RequestException as e:
+                return {
+                    "success": False,
+                    "error": f"API request failed: {str(e)}"
+                }
+            except json.JSONDecodeError as e:
+                return {
+                    "success": False,
+                    "error": f"Failed to parse API response as JSON: {str(e)}"
+                }
+            except Exception as e:
+                return {
+                    "success": False, 
+                    "error": f"Error extracting data: {str(e)}"
+                }
+
+        def _get_simple_value(self, data: dict, key_path: str):
+            """
+            Simple helper method to get nested values using dot notation (e.g., 'dataObject.fields.address').
+            Supports array indexing (e.g., 'array.0.field').
+            
+            Args:
+                data (dict): The JSON data to search in
+                key_path (str): The key path (e.g., 'dataObject.fields.address' or 'array.0.field')
+                
+            Returns:
+                Any: The value if found, None otherwise
+            """
+            try:
+                keys = key_path.split('.')
+                current_data = data
+                
+                for key in keys:
+                    if isinstance(current_data, dict) and key in current_data:
+                        current_data = current_data[key]
+                    elif isinstance(current_data, list) and key.isdigit():
+                        index = int(key)
+                        if 0 <= index < len(current_data):
+                            current_data = current_data[index]
+                        else:
+                            return None
+                    else:
+                        return None
+                        
+                return current_data
+            except:
+                return None
+
+        def push_data(self, field_updates: dict, encompass_loan_guid: str, base_url: str, access_token: str):
+            """
+            Pushes field updates to Encompass via write_loan_data endpoint.
+            Based on the ESFuse API structure from the Postman collection.
+            
+            Args:
+                field_updates (dict): Dictionary of field updates to push to Encompass
+                encompass_loan_guid (str): The GUID of the loan in Encompass
+                base_url (str): The base URL for the ESFuse API
+                access_token (str): The access token for the ESFuse API
+                
+            Returns:
+                dict: Success status and Encompass update results
+            """
+            try:
+                if not encompass_loan_guid:
+                    return {
+                        "success": False,
+                        "error": "encompass_loan_guid is required"
+                    }
+                
+                if not field_updates:
+                    return {
+                        "success": False,
+                        "error": "No field updates provided"
+                    }
+                
+                if not base_url or not access_token:
+                    return {
+                        "success": False,
+                        "error": "base_url and access_token are required"
+                    }
+                
+
+                
+                # Prepare request body matching the Postman collection structure
+                request_body = {
+                    "encompass_loan_guid": encompass_loan_guid,
+                    "json_data": json.dumps(field_updates)  # Convert dict to JSON string
+                }
+                
+                # Construct the write_loan_data endpoint URL
+                write_loan_url = f"{base_url}/api/v1/write_loan_data?token={access_token}"
+                
+                # Make POST request to write_loan_data endpoint
+                response = requests.post(
+                    write_loan_url,
+                    json=request_body,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    return {
+                        "success": True,
+                        "encompass_loan_guid": encompass_loan_guid,
+                        "fields_updated": list(field_updates.keys()),
+                        "response": response.json() if response.content else None,
+                        "status_code": response.status_code
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"Encompass API request failed with status {response.status_code}",
+                        "response_text": response.text,
+                        "status_code": response.status_code
+                    }
+                    
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": f"Encompass update error: {str(e)}"
+                }
+
+        def pull_doc(self, api_base: str, token: str, client_id: str, doc_id: str):
+            """
+            Downloads a PDF document from the ESFuse API based on the new curl command structure.
+            
+            Args:
+                api_base (str): The base URL for the ESFuse API 
+                token (str): The authorization token (e.g., "esfuse-token")
+                client_id (str): The client ID (e.g., "Fintor")
+                doc_id (str): The document ID (e.g., "URLA-2019-Borrower-v28")
+                
+            Returns:
+                dict: Success status and file path where PDF was saved
+            """
+            try:
+                # Construct the API URL based on the curl command
+                api_url = f"{api_base}/doc?clientId={client_id}&docId={doc_id}"
+                
+
+                
+                # Set up headers with Bearer token
+                headers = {
+                    "Authorization": f"Bearer {token}"
+                }
+                
+                # Make GET request to download the document
+                response = requests.get(api_url, headers=headers, timeout=30)
+                
+                if response.status_code == 200:
+                    # Try to parse as JSON first
+                    try:
+                        response_json = response.json()
+                        
+                        # Check if it's a JSON response with document info
+                        if isinstance(response_json, dict):
+                            return {
+                                "success": True,
+                                "response_type": "json",
+                                "response_data": response_json,
+                                "api_url": api_url,
+                                "client_id": client_id,
+                                "doc_id": doc_id
+                            }
+                        else:
+                            # Fall back to PDF handling
+                            raise ValueError("Response is not a valid JSON document")
+                            
+                    except (json.JSONDecodeError, ValueError):
+                        # If not JSON, treat as PDF download
+                        # Create filename for local storage
+                        filename = f"{doc_id}.pdf"
+                        
+                        # Save the PDF file locally
+                        with open(filename, 'wb') as f:
+                            f.write(response.content)
+                        
+                        return {
+                            "success": True,
+                            "response_type": "pdf",
+                            "filename": filename,
+                            "file_size": len(response.content),
+                            "api_url": api_url,
+                            "client_id": client_id,
+                            "doc_id": doc_id
+                        }
+                    
+                else:
+                    return {
+                        "success": False,
+                        "error": f"API request failed with status {response.status_code}",
+                        "response_text": response.text,
+                        "status_code": response.status_code
+                    }
+                    
+            except requests.exceptions.RequestException as e:
+                return {
+                    "success": False,
+                    "error": f"Request failed: {str(e)}"
+                }
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": f"Unexpected error: {str(e)}"
+                }
+
+        def push_doc(self, loan_id: int, document_ids: list, base_url: str, access_token: str, submission_type: str = "Initial Submission", auto_lock: bool = True):
+            """
+            Creates a new loan submission and associates documents with it. Supports auto-locking based
+            on account configuration.
+            
+            Args:
+                loan_id (int): Identifier of the loan to attach the submission to
+                document_ids (list): IDs of documents to include in the submission
+                base_url (str): The base URL for the ESFuse API
+                access_token (str): The API access token
+                submission_type (str, optional): Type of submission (default: "Initial Submission")
+                auto_lock (bool, optional): Locks the submission automatically after creation (default: True)
+                
+            Returns:
+                dict: Success status and API response results
+            """
+            try:
+                if not loan_id:
+                    return {
+                        "success": False,
+                        "error": "loan_id is required"
+                    }
+                
+                if not document_ids:
+                    return {
+                        "success": False,
+                        "error": "document_ids list cannot be empty"
+                    }
+                
+                if not base_url or not access_token:
+                    return {
+                        "success": False,
+                        "error": "base_url and access_token are required"
+                    }
+                
+
+                
+                # Prepare request body
+                request_body = {
+                    "document_ids": document_ids,
+                    "submission_type": submission_type,
+                    "auto_lock": auto_lock
+                }
+                
+                # Construct the create submission endpoint URL
+                create_submission_url = f"{base_url}/api/v5/loans/{loan_id}/submissions?token={access_token}"
+                
+                # Set up headers
+                headers = {
+                    "Content-Type": "application/json"
+                }
+                
+                # Make POST request to create submission endpoint
+                response = requests.post(
+                    create_submission_url,
+                    json=request_body,
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 201:
+                    response_data = response.json() if response.content else None
+                    return {
+                        "success": True,
+                        "loan_id": loan_id,
+                        "document_ids": document_ids,
+                        "submission_type": submission_type,
+                        "auto_lock": auto_lock,
+                        "response": response_data,
+                        "status_code": response.status_code
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"ESFuse API request failed with status {response.status_code}",
+                        "response_text": response.text,
+                        "status_code": response.status_code
+                    }
+                    
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": f"Submission creation error: {str(e)}"
+                }
