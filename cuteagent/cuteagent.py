@@ -11,6 +11,8 @@ import anthropic
 from openai import OpenAI
 from dotenv import load_dotenv
 from typing import Dict, Union, Optional, Any
+import urllib.parse
+import urllib.request
 # https://working-tuna-massive.ngrok-free.app
 # https://upright-mantis-intensely.ngrok-free.app/
 # https://working-tuna-massive.ngrok-free.app/
@@ -1526,9 +1528,102 @@ class StationAgent:
 			return {"success": False, "error": error_message}
 
 class DocumentAgent:
+    # Required for get_task function calls:
+    TASKDOC_ROOT_URL="https://tm.msd.uat.cybersoftbpo.com"
+    TASKDOC_USER="pull.doc.system.user"
+    
     def __init__(self):
         """Initialize DocumentAgent with nested ESFuse class."""
         self.ESFuse = self.ESFuse(self)  # Initialize the nested class
+
+    def get_task(self, task_id: str, api_token: str, auth_token: str) -> dict:
+        """Get task details using task ID.
+        
+        GET /api/tools/v0/tasks/{TASK_ID}.json?auth_token=...&api_token=...
+        
+        Args:
+            task_id (str): The task ID to retrieve details for
+            api_token (str): TASKDOC API token
+            auth_token (str): TASKDOC authentication token
+            
+        Returns:
+            dict: Task response dict compatible with downstream processing
+        """
+        try:
+            url = f"{self.TASKDOC_ROOT_URL}/api/tools/v0/tasks/{task_id}.json"
+            parsed = urllib.parse.urlparse(url)
+            query = urllib.parse.parse_qs(parsed.query)
+            query['auth_token'] = [auth_token]
+            query['api_token'] = [api_token]
+            final_query = urllib.parse.urlencode(query, doseq=True)
+            final_url = urllib.parse.urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, final_query, parsed.fragment))
+            
+            req = urllib.request.Request(final_url)
+            req.add_header('Accept', 'application/json')
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read().decode('utf-8'))
+                print(f"get_task response: {json.dumps(data)[:1000]}")
+                return {
+                    "task_id": task_id,
+                    "status": response.status,
+                    "response": data,
+                    "fallback_used": "get_task"
+                }
+        except Exception as ge:
+            print(f"get_task failed: {str(ge)}")
+            return {
+                "task_id": task_id,
+                "status": 0,
+                "error": str(ge),
+                "fallback_used": "get_task"
+            }
+     
+    def screenshot_upload(self, screenshot_url: str, client_id: str, put_api: str, custom_filename: str = None, loan_id: str = None, package_type: str = None, data_object: dict = None) -> dict:
+
+        try:
+            import time
+            response = requests.post(screenshot_url, json=data_object)
+            response.raise_for_status()
+            content_base64 = base64.b64encode(response.content).decode('utf-8')
+
+            body = {
+                "clientId": client_id,
+                "content_base64": content_base64,
+                "dataObject": data_object or {
+                    "source_url": screenshot_url,
+                    "timestamp": time.time(),
+                    "upload_method": "cuteagent_library"
+                }
+            }
+            if custom_filename:
+                body["screenId"] = custom_filename  # Use custom filename as screen_id
+            if loan_id:
+                body["loanId"] = loan_id
+            if package_type:
+                body["packageType"] = package_type
+            
+            upload_response = requests.post(
+                f"{put_api}/put",
+                headers={"Authorization": "Bearer esfuse-token", "Content-Type": "application/json"},
+                json=body,
+                timeout=30
+            )
+        
+            if upload_response.status_code == 200:
+                result = upload_response.json()
+                return {
+                    "success": True,
+                    "screen_id": result["screenId"],  # Auto UUID or custom filename
+                    "client_id": result["clientId"],
+                    "loan_id": result.get("loanId"),
+                    "package_type": result.get("PackageType") or result.get("packageType"),
+                    "screen_id_generated": result.get("screenIdGenerated", False),
+                    "data_object_stored": result.get("dataObjectStored", False)
+                }
+            else:
+                return {"success": False, "error": f"Upload failed: {upload_response.text}"}
+        except Exception as e:
+            pass
     
     class ESFuse:
         """Nested class for ESFuse functionality with multiple sub-functions."""
@@ -1537,79 +1632,60 @@ class DocumentAgent:
             self.agent = agent
 
 
-        def pull_data(self, client_id: str, loan_id: str, doc_id: str, esfuse_token: str, get_api_url: str):
+        def pull_data(self, client_id: str, loan_id: str, esfuse_token: str, get_api_base: str):
             """
-            Makes an API call to retrieve loan data and extracts specific fields using simple mapping.
+            Makes an API call to retrieve loan data using the loan endpoint and returns both raw and parsed data.
                 
             Args:
                 client_id (str): The client ID for the loan
                 loan_id (str): The loan ID to retrieve
-                doc_id (str): The document ID to retrieve
                 esfuse_token (str): The ESFuse authentication token
-                get_api_url (str): The base URL for the ESFuse API
-                extraction_rules (dict, optional): Custom rules for what data to extract. If None, uses default rules.
+                get_api_base (str): The base URL for the ESFuse API
                     
             Returns:
-                dict: JSON object containing the extracted data or error information
+                dict: JSON object containing both raw and parsed data or error information
             """
             try:
-                if not client_id or not loan_id or not doc_id or not esfuse_token:
+                if not client_id or not loan_id or not esfuse_token or not get_api_base:
                     return {
                         "success": False,
-                        "error": "client_id, loan_id, doc_id, and esfuse_token are required"
+                        "error": "client_id, loan_id, esfuse_token, and get_api_base are required"
                     }
                 
-                api_url = f"{get_api_url}/doc?clientId={client_id}&docId={doc_id}"
+                # Use loan endpoint instead of doc endpoint
+                api_url = f"{get_api_base}/loan?clientId={client_id}&loanId={loan_id}"
                 
                 # Set up headers with the ESFuse token
                 headers = {
-                    "Authorization": f"Bearer {esfuse_token}",
-                    "Content-Type": "application/json"
+                    "Authorization": f"Bearer {esfuse_token}"
                 }
                 
-
+                print(f"🔍 Getting loan data from: {api_url}")
                 
                 # Make the API call
                 response = requests.get(api_url, headers=headers, timeout=30)
                 
                 # Check if the request was successful
                 if response.status_code == 200:
-                    response_data = response.json()
-                    # Extract the loan data from the 'dataObject' key
-                    if 'dataObject' in response_data:
-                        json_data = response_data['dataObject']
-                    else:
-                        json_data = response_data
+                    raw_data = response.json()
+                    
+                    # Parse important loan details
+                    parsed_data = self._parse_loan_data(raw_data)
+                    
+                    return {
+                        "success": True,
+                        "raw": raw_data,
+                        "parsed": parsed_data,
+                        "api_url": api_url,
+                        "client_id": client_id,
+                        "loan_id": loan_id
+                    }
                 else:
                     return {
                         "success": False,
-                        "error": f"API call failed with status {response.status_code}: {response.text}"
+                        "error": f"API call failed with status {response.status_code}: {response.text}",
+                        "api_url": api_url
                     }
-                
-                # Simple field mapping - similar to jq in your curl example
-                extraction_rules = {
-                    "hasDataObject": "hasDataObject",
-                    "extracted_at": "dataObject.extracted_at",
-                    "source": "dataObject.source",
-                    "reportIssued": "dataObject.fields.reportIssued",
-                    "applicant1": "dataObject.fields.applicant1",
-                    "address": "dataObject.fields.address"
-                }
-                
-                # Extract data using simple field mapping
-                extracted_data = {}
-                
-                for field_name, field_path in extraction_rules.items():
-                    # Get the value using the field path
-                    field_value = self._get_simple_value(json_data, field_path)
-                    extracted_data[field_name] = field_value
-                
-                
-                # Add the raw API response for debugging
-                result = extracted_data.copy()
-                result['_raw_response'] = response_data
-                
-                return result
                 
             except requests.exceptions.RequestException as e:
                 return {
@@ -1625,6 +1701,204 @@ class DocumentAgent:
                 return {
                     "success": False, 
                     "error": f"Error extracting data: {str(e)}"
+                }
+
+        def _parse_loan_data(self, raw_data: dict) -> dict:
+            """
+            Parse important loan details from the raw API response.
+            
+            Args:
+                raw_data (dict): Raw JSON response from the loan API
+                
+            Returns:
+                dict: Parsed loan information with key details
+            """
+            try:
+                parsed = {}
+                
+                # Extract top-level loan info
+                parsed["client_id"] = raw_data.get("clientId")
+                parsed["loan_id"] = raw_data.get("loanId")
+                
+                # Extract encompass GUID from pull_containers
+                if "pull_containers" in raw_data:
+                    pull_containers = raw_data["pull_containers"]
+                    parsed["encompass_loan_guid"] = pull_containers.get("encompass_loan_guid")
+                    parsed["workflow_state"] = pull_containers.get("workflow_state")
+                
+                # Extract main loan details from loaninfo.load_loan_by_guid.Loan
+                loan_path = raw_data.get("loaninfo", {}).get("load_loan_by_guid", {}).get("Loan", {})
+                
+                if loan_path:
+                    # Basic loan information
+                    parsed["loan_number"] = loan_path.get("LoanNumber")
+                    parsed["loan_amount"] = loan_path.get("LoanAmount")
+                    parsed["interest_rate"] = loan_path.get("InterestRate")
+                    parsed["loan_type"] = loan_path.get("LoanType")
+                    parsed["loan_program"] = loan_path.get("LoanProgram")
+                    parsed["loan_purpose"] = loan_path.get("LoanPurpose")
+                    parsed["occupancy"] = loan_path.get("Occupancy")
+                    parsed["lender"] = loan_path.get("Lender")
+                    
+                    # Property information
+                    parsed["property_address"] = loan_path.get("Address")
+                    parsed["property_city"] = loan_path.get("City")
+                    parsed["property_state"] = loan_path.get("State")
+                    parsed["property_zip"] = loan_path.get("ZipCode")
+                    
+                    # Extract Form1003Content (main application data)
+                    form1003 = loan_path.get("Form1003Content", {})
+                    if form1003:
+                        # Borrower information
+                        borrower = form1003.get("borrower", {})
+                        parsed["borrower"] = {
+                            "first_name": borrower.get("firstName"),
+                            "last_name": borrower.get("lastName"),
+                            "middle_name": borrower.get("middleName"),
+                            "email": borrower.get("email"),
+                            "ssn": form1003.get("SSN"),
+                            "dob": form1003.get("DOB"),
+                            "home_phone": form1003.get("homePhone"),
+                            "business_phone": form1003.get("businessPhone"),
+                            "marital_status": form1003.get("status"),
+                            "gross_monthly_income": form1003.get("borrowerGrossMonthlyIncome")
+                        }
+                        
+                        # Co-Borrower information
+                        co_borrower = form1003.get("coBorrower", {})
+                        if co_borrower:
+                            parsed["co_borrower"] = {
+                                "first_name": co_borrower.get("firstName"),
+                                "last_name": co_borrower.get("lastName"),
+                                "middle_name": co_borrower.get("middleName"),
+                                "email": co_borrower.get("email"),
+                                "ssn": form1003.get("coBorrowerSSN"),
+                                "dob": form1003.get("coBorrowerDOB"),
+                                "home_phone": form1003.get("coBorrowerHomePhone"),
+                                "business_phone": form1003.get("coBorrowerBusinessPhone"),
+                                "marital_status": form1003.get("coBorrowerStatus"),
+                                "gross_monthly_income": form1003.get("coBorrowerGrossMonthlyIncome"),
+                                "position": form1003.get("coBorrowerPosition")
+                            }
+                        
+                        # Present Address
+                        present_address = form1003.get("presentAddress", {})
+                        if present_address:
+                            parsed["borrower_current_address"] = {
+                                "address1": present_address.get("address1"),
+                                "address2": present_address.get("address2"),
+                                "city": present_address.get("city"),
+                                "state": present_address.get("state"),
+                                "zip_code": present_address.get("zipCode"),
+                                "own_or_rent": present_address.get("ownOrRent"),
+                                "years": present_address.get("years"),
+                                "months": present_address.get("months")
+                            }
+                        
+                        # Subject Property Address
+                        subject_property = form1003.get("subjectPropertyAddress", {})
+                        if subject_property:
+                            parsed["subject_property_address"] = {
+                                "address1": subject_property.get("address1"),
+                                "address2": subject_property.get("address2"),
+                                "city": subject_property.get("city"),
+                                "state": subject_property.get("state"),
+                                "zip_code": subject_property.get("zipCode")
+                            }
+                        
+                        # Employment Information
+                        employer = form1003.get("nameOfEmployer", {})
+                        if employer:
+                            parsed["borrower_employment"] = {
+                                "employer_name": employer.get("name"),
+                                "position": form1003.get("position"),
+                                "years_on_job": form1003.get("yrsOnThisJob", {}),
+                                "years_in_line_of_work": form1003.get("yrsEmployedInThisLineOfWork", {}),
+                                "self_employed": form1003.get("selfEmployed")
+                            }
+                            
+                        # Employment Address
+                        employer_address = form1003.get("addressOfEmployer", {})
+                        if employer_address:
+                            parsed["borrower_employment"]["employer_address"] = {
+                                "address1": employer_address.get("address1"),
+                                "address2": employer_address.get("address2"),
+                                "city": employer_address.get("city"),
+                                "state": employer_address.get("state"),
+                                "zip_code": employer_address.get("zipCode")
+                            }
+                        
+                        # Co-Borrower Employment
+                        co_employer = form1003.get("coBorrowerNameOfEmployer", {})
+                        if co_employer:
+                            parsed["co_borrower_employment"] = {
+                                "employer_name": co_employer.get("name"),
+                                "position": form1003.get("coBorrowerPosition"),
+                                "years_on_job": form1003.get("coBorrowerYrsOnThisJob", {}),
+                                "years_in_line_of_work": form1003.get("coBorrowerYrsEmployedInThisLineOfWork", {}),
+                                "self_employed": form1003.get("coBorrowerSelfEmployed")
+                            }
+                        
+                        # Bank Accounts
+                        banks = form1003.get("banks", [])
+                        if banks:
+                            parsed["bank_accounts"] = []
+                            for bank in banks:
+                                bank_info = {
+                                    "bank_name": bank.get("bank", {}).get("name"),
+                                    "account_number": bank.get("accountNumber"),
+                                    "account_type": bank.get("accountType"),
+                                    "ending_balance": bank.get("endingBalance"),
+                                    "verification_for": bank.get("verificationFor")
+                                }
+                                parsed["bank_accounts"].append(bank_info)
+                        
+                        # Liabilities
+                        liabilities = form1003.get("liabilities", [])
+                        if liabilities:
+                            parsed["liabilities"] = []
+                            for liability in liabilities:
+                                liability_info = {
+                                    "company_name": liability.get("company", {}).get("name"),
+                                    "account_number": liability.get("accountNumber"),
+                                    "account_type": liability.get("accountType"),
+                                    "unpaid_balance": liability.get("unpaidBalance"),
+                                    "payment_per_month": liability.get("paymentPerMonths"),
+                                    "paid_off_status": liability.get("paidOffStatusIndicator"),
+                                    "verification_for": liability.get("verificationFor")
+                                }
+                                parsed["liabilities"].append(liability_info)
+                        
+                        # Loan terms
+                        parsed["loan_terms"] = {
+                            "loan_amount": form1003.get("amount"),
+                            "number_of_months": form1003.get("noOfMonths"),
+                            "interest_rate": form1003.get("interestRate"),
+                            "amortization_type": form1003.get("amortizationType"),
+                            "mortgage_applied_for": form1003.get("mortgageAppliedFor"),
+                            "purpose_of_loan": form1003.get("purposeOfLoan")
+                        }
+                    
+                    # Loan Associates (Loan Officer, etc.)
+                    loan_associates = loan_path.get("LoanAssociates", {})
+                    if loan_associates:
+                        parsed["loan_team"] = {}
+                        for role, associates in loan_associates.items():
+                            if associates and len(associates) > 0:
+                                primary_associate = associates[0]  # Get first associate
+                                parsed["loan_team"][role.lower().replace(" ", "_")] = {
+                                    "full_name": primary_associate.get("FullName"),
+                                    "email": primary_associate.get("Email"),
+                                    "role": primary_associate.get("Role"),
+                                    "primary": primary_associate.get("Primary", False)
+                                }
+                
+                return parsed
+                
+            except Exception as e:
+                return {
+                    "parse_error": f"Error parsing loan data: {str(e)}",
+                    "partial_data": parsed if 'parsed' in locals() else {}
                 }
 
         def _get_simple_value(self, data: dict, key_path: str):
@@ -1659,14 +1933,18 @@ class DocumentAgent:
             except:
                 return None
 
-        def push_data(self, field_updates: dict, encompass_loan_guid: str, base_url: str, access_token: str):
+        def push_data(self, field_updates: dict, client_id: str, loan_id: str, get_api_base: str, esfuse_token: str, base_url: str, access_token: str):
             """
             Pushes field updates to Encompass via write_loan_data endpoint.
+            First retrieves the encompass_loan_guid using the loan API, then pushes updates.
             Based on the ESFuse API structure from the Postman collection.
             
             Args:
                 field_updates (dict): Dictionary of field updates to push to Encompass
-                encompass_loan_guid (str): The GUID of the loan in Encompass
+                client_id (str): The client ID for the loan lookup
+                loan_id (str): The loan ID for the loan lookup
+                get_api_base (str): The base URL for the loan lookup API
+                esfuse_token (str): The ESFuse authentication token for loan lookup
                 base_url (str): The base URL for the ESFuse API
                 access_token (str): The access token for the ESFuse API
                 
@@ -1674,27 +1952,47 @@ class DocumentAgent:
                 dict: Success status and Encompass update results
             """
             try:
-                if not encompass_loan_guid:
-                    return {
-                        "success": False,
-                        "error": "encompass_loan_guid is required"
-                    }
-                
                 if not field_updates:
                     return {
                         "success": False,
                         "error": "No field updates provided"
                     }
                 
-                if not base_url or not access_token:
+                if not all([client_id, loan_id, get_api_base, esfuse_token, base_url, access_token]):
                     return {
                         "success": False,
-                        "error": "base_url and access_token are required"
+                        "error": "client_id, loan_id, get_api_base, esfuse_token, base_url and access_token are required"
                     }
                 
-
+                # STEP 1: Get the encompass_loan_guid using the loan API
+                loan_api_url = f"{get_api_base}/loan?clientId={client_id}&loanId={loan_id}"
+                loan_headers = {
+                    "Authorization": f"Bearer {esfuse_token}"
+                }
                 
-                # Prepare request body matching the Postman collection structure
+                print(f"🔍 Getting loan GUID from: {loan_api_url}")
+                loan_response = requests.get(loan_api_url, headers=loan_headers, timeout=30)
+                
+                if loan_response.status_code != 200:
+                    return {
+                        "success": False,
+                        "error": f"Failed to get loan GUID. API returned status {loan_response.status_code}: {loan_response.text}"
+                    }
+                
+                loan_data = loan_response.json()
+                
+                # Flatten the JSON and search for any key ending with "encompass_loan_guid"
+                encompass_loan_guid = self._find_encompass_guid(loan_data)
+                
+                if not encompass_loan_guid:
+                    return {
+                        "success": False,
+                        "error": f"No key ending with 'encompass_loan_guid' found in loan API response. Available top-level keys: {list(loan_data.keys())}"
+                    }
+                
+                print(f"✅ Retrieved encompass_loan_guid: {encompass_loan_guid}")
+                
+                # STEP 2: Prepare request body matching the Postman collection structure
                 request_body = {
                     "encompass_loan_guid": encompass_loan_guid,
                     "json_data": json.dumps(field_updates)  # Convert dict to JSON string
@@ -1731,6 +2029,46 @@ class DocumentAgent:
                     "success": False,
                     "error": f"Encompass update error: {str(e)}"
                 }
+
+        def _find_encompass_guid(self, data, parent_key=""):
+            """
+            Recursively flatten JSON and find any key ending with 'encompass_loan_guid'.
+            
+            Args:
+                data: JSON data to search (dict, list, or primitive)
+                parent_key: Current path in the JSON structure
+                
+            Returns:
+                str: The first GUID value found, or None if not found
+            """
+            try:
+                if isinstance(data, dict):
+                    for key, value in data.items():
+                        current_key = f"{parent_key}.{key}" if parent_key else key
+                        
+                        # Check if current key ends with "encompass_loan_guid"
+                        if key.endswith("encompass_loan_guid") and value:
+                            print(f"🔍 Found GUID at key: '{current_key}' = {value}")
+                            return value
+                        
+                        # Recursively search in nested structures
+                        if isinstance(value, (dict, list)):
+                            result = self._find_encompass_guid(value, current_key)
+                            if result:
+                                return result
+                                
+                elif isinstance(data, list):
+                    for i, item in enumerate(data):
+                        current_key = f"{parent_key}[{i}]" if parent_key else f"[{i}]"
+                        result = self._find_encompass_guid(item, current_key)
+                        if result:
+                            return result
+                
+                return None
+                
+            except Exception as e:
+                print(f"Error in _find_encompass_guid: {e}")
+                return None
 
         def pull_doc(self, api_base: str, token: str, client_id: str, doc_id: str):
             """
@@ -1816,10 +2154,11 @@ class DocumentAgent:
                     "error": f"Unexpected error: {str(e)}"
                 }
 
-        def push_doc(self, loan_id: int, document_ids: list, base_url: str, access_token: str, submission_type: str = "Initial Submission", auto_lock: bool = True):
+        def push_doc(self, client_id: str, doc_id: str, token: str, api_base: str, submission_type: str = "Initial Submission", auto_lock: bool = False, taskdoc_api_token: str = None, taskdoc_auth_token: str = None):
             """
             Creates a new loan submission and associates documents with it. Supports auto-locking based
-            on account configuration.
+            on account configuration. Now includes DocRepo integration to extract taskId and other fields
+            at the beginning of the process.
             
             Args:
                 loan_id (int): Identifier of the loan to attach the submission to
@@ -1828,75 +2167,260 @@ class DocumentAgent:
                 access_token (str): The API access token
                 submission_type (str, optional): Type of submission (default: "Initial Submission")
                 auto_lock (bool, optional): Locks the submission automatically after creation (default: True)
+                client_id (str, optional): DocRepo client ID (default: "137")
+                doc_id (str, optional): DocRepo document ID (default: "935") 
+                token (str, optional): DocRepo authentication token (default: "esfuse-token")
+                api_base (str, optional): DocRepo API base URL
+                taskdoc_api_token (str, optional): TASKDOC API token for get_task call
+                taskdoc_auth_token (str, optional): TASKDOC authentication token for get_task call
                 
             Returns:
-                dict: Success status and API response results
+                dict: Success status, extracted DocRepo fields (including taskId), and API response results
             """
             try:
-                if not loan_id:
-                    return {
-                        "success": False,
-                        "error": "loan_id is required"
-                    }
-                
-                if not document_ids:
-                    return {
-                        "success": False,
-                        "error": "document_ids list cannot be empty"
-                    }
-                
-                if not base_url or not access_token:
-                    return {
-                        "success": False,
-                        "error": "base_url and access_token are required"
-                    }
-                
-
-                
-                # Prepare request body
-                request_body = {
-                    "document_ids": document_ids,
-                    "submission_type": submission_type,
-                    "auto_lock": auto_lock
-                }
-                
-                # Construct the create submission endpoint URL
-                create_submission_url = f"{base_url}/api/v5/loans/{loan_id}/submissions?token={access_token}"
-                
-                # Set up headers
-                headers = {
+                # STEP 1: Extract DocRepo data first (including taskId)
+                print("🔍 Extracting DocRepo data...")
+                docrepo_url = f"{api_base}/doc?clientId={client_id}&docId={doc_id}"
+                docrepo_headers = {
+                    "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json"
                 }
                 
-                # Make POST request to create submission endpoint
-                response = requests.post(
-                    create_submission_url,
-                    json=request_body,
-                    headers=headers,
-                    timeout=30
-                )
+                try:
+                    docrepo_response = requests.get(docrepo_url, headers=docrepo_headers, timeout=30)
+                    if docrepo_response.status_code == 200:
+                        docrepo_data = docrepo_response.json()
+                        
+                        # Extract key fields from DocRepo response
+                        extracted_fields = {
+                            "taskId": docrepo_data.get("taskId"),
+                            "hasTaskId": docrepo_data.get("hasTaskId"),
+                            "loanId": docrepo_data.get("loanId"),
+                            "hasLoanId": docrepo_data.get("hasLoanId"),
+                            "clientId": docrepo_data.get("clientId"),
+                            "docId": docrepo_data.get("docId"),
+                            "hasDataObject": docrepo_data.get("hasDataObject"),
+                            "url": docrepo_data.get("url")
+                        }
+                        
+                        # Extract additional fields from dataObject if available
+                        if "dataObject" in docrepo_data and docrepo_data["dataObject"]:
+                            data_obj = docrepo_data["dataObject"]
+                            extracted_fields.update({
+                                "extracted_at": data_obj.get("extracted_at"),
+                                "extraction_method": data_obj.get("extraction_method"),
+                                "source": data_obj.get("source"),
+                                "document_id": data_obj.get("document_id")
+                            })
+                            
+                            # Extract fields from nested fields object
+                            if "fields" in data_obj and data_obj["fields"]:
+                                fields_obj = data_obj["fields"]
+                                extracted_fields.update({
+                                    "reportIssued": fields_obj.get("reportIssued"),
+                                    "hireDate": fields_obj.get("hireDate"),
+                                    "payStubPeriodFrom": fields_obj.get("payStubPeriodFrom"),
+                                    "payStubPeriodTo": fields_obj.get("payStubPeriodTo"),
+                                    "YTD": fields_obj.get("YTD"),
+                                    "current": fields_obj.get("current"),
+                                    "hourlyRate": fields_obj.get("hourlyRate"),
+                                    "hoursWorked": fields_obj.get("hoursWorked"),
+                                    "hoursPerWeek": fields_obj.get("hoursPerWeek"),
+                                    "confidence": fields_obj.get("confidence"),
+                                    "tier": fields_obj.get("tier"),
+                                    "category": fields_obj.get("category"),
+                                    "address": fields_obj.get("address"),
+                                    "employerAddress": fields_obj.get("employerAddress"),
+                                    "employee": fields_obj.get("employee"),
+                                    "employer": fields_obj.get("employer"),
+                                    "variableIncomes": fields_obj.get("variableIncomes"),
+                                    "exceptions": fields_obj.get("exceptions")
+                                })
+                        
+                        print(f"✅ DocRepo data extracted successfully. TaskId: {extracted_fields.get('taskId')}")
+                        
+                        # STEP 2: Call get_task if taskId exists and tokens are provided
+                        task_id = extracted_fields.get('taskId')
+                        if task_id and taskdoc_api_token and taskdoc_auth_token:
+                            print(f"📋 Getting task details for TaskId: {task_id}")
+                            task_details = self.agent.get_task(task_id, taskdoc_api_token, taskdoc_auth_token)
+                            extracted_fields['task_details'] = task_details
+                            
+                            # Extract specific fields from TaskDoc response if successful
+                            if task_details.get('status') == 200 and task_details.get('response'):
+                                task_response = task_details.get('response', {})
+                                
+                                # Extract document IDs from parameters.created_result_document_ids
+                                parameters = task_response.get('parameters', {})
+                                document_ids = parameters.get('created_result_document_ids', [])
+                                extracted_fields['taskdoc_document_ids'] = document_ids
+                                
+                                # Extract loan ID from parameters.loan_id
+                                taskdoc_loan_id = parameters.get('loan_id')
+                                extracted_fields['taskdoc_loan_id'] = taskdoc_loan_id
+                                
+                                # Extract API token from app.default_request_data.api_token
+                                app = task_response.get('app', {})
+                                default_request_data = app.get('default_request_data', {})
+                                taskdoc_api_token_extracted = default_request_data.get('api_token')
+                                extracted_fields['taskdoc_api_token'] = taskdoc_api_token_extracted
+                                
+                                # Extract root URL from app.tool_parameters.root_url
+                                tool_parameters = app.get('tool_parameters', {})
+                                taskdoc_root_url = tool_parameters.get('root_url')
+                                extracted_fields['taskdoc_root_url'] = taskdoc_root_url
+                                
+                                # Extract workflow state
+                                workflow_state = task_response.get('workflow_state')
+                                extracted_fields['taskdoc_workflow_state'] = workflow_state
+                                
+                                # Extract assignee info
+                                assignee = task_response.get('assignee', {})
+                                if assignee:
+                                    extracted_fields['taskdoc_assignee'] = {
+                                        'username': assignee.get('username'),
+                                        'first_name': assignee.get('first_name'),
+                                        'last_name': assignee.get('last_name')
+                                    }
+                                
+                                print(f"✅ Task details and specific fields extracted successfully")
+                                print(f"   Document IDs: {len(document_ids)} documents")
+                                print(f"   Loan ID: {taskdoc_loan_id}")
+                                print(f"   Root URL: {taskdoc_root_url}")
+                            else:
+                                print(f"⚠️ TaskDoc call failed or returned no data")
+                                
+                        elif task_id and (not taskdoc_api_token or not taskdoc_auth_token):
+                            print(f"⚠️ TaskId found but TASKDOC tokens not provided - skipping get_task call")
+                        else:
+                            print(f"⚠️ No TaskId found - skipping get_task call")
+                        
+                    else:
+                        print(f"⚠️ DocRepo API failed with status {docrepo_response.status_code}")
+                        extracted_fields = {"docrepo_error": f"API failed with status {docrepo_response.status_code}"}
+                        
+                except Exception as docrepo_error:
+                    print(f"⚠️ DocRepo extraction failed: {str(docrepo_error)}")
+                    extracted_fields = {"docrepo_error": str(docrepo_error)}
                 
-                if response.status_code == 201:
-                    response_data = response.json() if response.content else None
-                    return {
-                        "success": True,
-                        "loan_id": loan_id,
-                        "document_ids": document_ids,
-                        "submission_type": submission_type,
-                        "auto_lock": auto_lock,
-                        "response": response_data,
-                        "status_code": response.status_code
-                    }
+                # STEP 3: Push documents to submission endpoint using extracted data
+                if 'taskdoc_loan_id' in extracted_fields and 'taskdoc_root_url' in extracted_fields and 'taskdoc_api_token' in extracted_fields and 'taskdoc_document_ids' in extracted_fields:
+                    loan_id = extracted_fields['taskdoc_loan_id']
+                    base_url = extracted_fields['taskdoc_root_url']
+                    api_token = extracted_fields['taskdoc_api_token']
+                    document_ids = extracted_fields['taskdoc_document_ids']
+                    
+                    if loan_id and base_url and api_token and document_ids:
+                        print(f"📤 Creating submission for Loan ID: {loan_id}")
+                        print(f"   Using {len(document_ids)} documents")
+                        
+                        # Construct the submission endpoint URL (handle trailing slashes)
+                        base_url_clean = base_url.rstrip('/')
+                        submission_url = f"{base_url_clean}/api/v5/loans/{loan_id}/submissions?token={api_token}"
+                        
+                        # Prepare the request body
+                        submission_body = {
+                            "document_ids": document_ids,
+                            "submission_type": submission_type,
+                            "auto_lock": auto_lock
+                        }
+                        
+                        # Set up headers for the submission request
+                        submission_headers = {
+                            "Content-Type": "application/json"
+                        }
+                        
+                        try:
+                            # Make the POST request to create the submission
+                            submission_response = requests.post(
+                                submission_url, 
+                                headers=submission_headers, 
+                                json=submission_body, 
+                                timeout=30
+                            )
+                            
+                            if submission_response.status_code in [200, 201]:
+                                submission_data = submission_response.json() if submission_response.content else {}
+                                print(f"✅ Submission created successfully!")
+                                print(f"   Status Code: {submission_response.status_code}")
+                                
+                                # Show submission details from response
+                                if submission_data:
+                                    submission_details = submission_data.get('details', {}).get('submission', {})
+                                    if submission_details:
+                                        print(f"   Submission ID: {submission_details.get('id')}")
+                                        print(f"   Submission Name: {submission_details.get('name')}")
+                                        print(f"   Locked: {submission_details.get('locked')}")
+                                
+                                # Add submission results to extracted fields (include entire response)
+                                extracted_fields['submission_result'] = {
+                                    "success": True,
+                                    "status_code": submission_response.status_code,
+                                    "response": submission_data,  # Full response included
+                                    "submission_url": submission_url,
+                                    "submission_body": submission_body,
+                                    "full_response": submission_data  # Also available as full_response for clarity
+                                }
+                                
+                            else:
+                                print(f"⚠️ Submission failed with status {submission_response.status_code}")
+                                
+                                # Print detailed error information
+                                print(f"📋 DETAILED ERROR INFORMATION:")
+                                print(f"   Status Code: {submission_response.status_code}")
+                                print(f"   Submission URL: {submission_url}")
+                                print(f"   Request Headers: {submission_headers}")
+                                print(f"   Request Body: {json.dumps(submission_body, indent=2)}")
+                                print(f"   Response Headers: {dict(submission_response.headers)}")
+                                print(f"   Response Text: {submission_response.text}")
+                                
+                                # Try to parse response as JSON for better error details
+                                try:
+                                    error_json = submission_response.json()
+                                    print(f"   Response JSON: {json.dumps(error_json, indent=2)}")
+                                except:
+                                    print("   Response is not valid JSON")
+                                
+                                extracted_fields['submission_result'] = {
+                                    "success": False,
+                                    "status_code": submission_response.status_code,
+                                    "error": f"Submission API failed with status {submission_response.status_code}",
+                                    "response_text": submission_response.text,
+                                    "response_headers": dict(submission_response.headers),
+                                    "submission_url": submission_url,
+                                    "submission_body": submission_body
+                                }
+                                
+                        except Exception as submission_error:
+                            print(f"⚠️ Submission request failed: {str(submission_error)}")
+                            extracted_fields['submission_result'] = {
+                                "success": False,
+                                "error": f"Submission request error: {str(submission_error)}",
+                                "submission_url": submission_url,
+                                "submission_body": submission_body
+                            }
+                    else:
+                        print(f"⚠️ Missing required data for submission: loan_id={loan_id}, base_url={base_url}, api_token={'***' if api_token else None}, document_count={len(document_ids) if document_ids else 0}")
+                        extracted_fields['submission_result'] = {
+                            "success": False,
+                            "error": "Missing required extracted data for submission"
+                        }
                 else:
-                    return {
+                    print(f"⚠️ TaskDoc extraction incomplete - skipping submission")
+                    extracted_fields['submission_result'] = {
                         "success": False,
-                        "error": f"ESFuse API request failed with status {response.status_code}",
-                        "response_text": response.text,
-                        "status_code": response.status_code
+                        "error": "TaskDoc data extraction incomplete - cannot create submission"
                     }
+
+                # Return the complete results including submission
+                return {
+                    "success": True,
+                    "docrepo_fields": extracted_fields,
+                    "message": "DocRepo data extracted and submission attempted"
+                }
                     
             except Exception as e:
                 return {
                     "success": False,
-                    "error": f"Submission creation error: {str(e)}"
+                    "error": f"DocRepo extraction error: {str(e)}"
                 }
