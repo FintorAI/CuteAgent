@@ -50,7 +50,8 @@ jobs:
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" ${{ steps.version.outputs.previous_tag }}..${{ steps.version.outputs.tag }} --no-merges)
             
             # Create full changelog
-            FULL_CHANGELOG="## What's Changed
+            FULL_CHANGELOG=$(cat << EOF
+## What's Changed
 
 $CHANGELOG
 
@@ -65,10 +66,13 @@ pip install cuteagent==${{ steps.version.outputs.version }}
 \`\`\`
 
 ---
-*This release was automatically created by GitHub Actions*"
+*This release was automatically created by GitHub Actions*
+EOF
+)
           else
             echo "📝 No previous tag found, creating initial release notes"
-            FULL_CHANGELOG="## 🎉 Initial Release v${{ steps.version.outputs.version }}
+            FULL_CHANGELOG=$(cat << EOF
+## 🎉 Initial Release v${{ steps.version.outputs.version }}
 
 This is the initial release of CuteAgent with StationAgent functionality.
 
@@ -89,7 +93,9 @@ pip install cuteagent==${{ steps.version.outputs.version }}
 \`\`\`
 
 ---
-*This release was automatically created by GitHub Actions*"
+*This release was automatically created by GitHub Actions*
+EOF
+)
           fi
           
           # Save changelog to output (escape newlines)
