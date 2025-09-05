@@ -1562,7 +1562,6 @@ class DocumentAgent:
             req.add_header('Accept', 'application/json')
             with urllib.request.urlopen(req) as response:
                 data = json.loads(response.read().decode('utf-8'))
-                print(f"get_task response: {json.dumps(data)[:1000]}")
                 return {
                     "task_id": task_id,
                     "status": response.status,
@@ -1570,7 +1569,6 @@ class DocumentAgent:
                     "fallback_used": "get_task"
                 }
         except Exception as ge:
-            print(f"get_task failed: {str(ge)}")
             return {
                 "task_id": task_id,
                 "status": 0,
@@ -1659,8 +1657,6 @@ class DocumentAgent:
                 headers = {
                     "Authorization": f"Bearer {esfuse_token}"
                 }
-                
-                print(f"🔍 Getting loan data from: {api_url}")
                 
                 # Make the API call
                 response = requests.get(api_url, headers=headers, timeout=30)
@@ -1970,7 +1966,6 @@ class DocumentAgent:
                     "Authorization": f"Bearer {esfuse_token}"
                 }
                 
-                print(f"🔍 Getting loan GUID from: {loan_api_url}")
                 loan_response = requests.get(loan_api_url, headers=loan_headers, timeout=30)
                 
                 if loan_response.status_code != 200:
@@ -1989,8 +1984,6 @@ class DocumentAgent:
                         "success": False,
                         "error": f"No key ending with 'encompass_loan_guid' found in loan API response. Available top-level keys: {list(loan_data.keys())}"
                     }
-                
-                print(f"✅ Retrieved encompass_loan_guid: {encompass_loan_guid}")
                 
                 # STEP 2: Prepare request body matching the Postman collection structure
                 request_body = {
@@ -2048,7 +2041,6 @@ class DocumentAgent:
                         
                         # Check if current key ends with "encompass_loan_guid"
                         if key.endswith("encompass_loan_guid") and value:
-                            print(f"🔍 Found GUID at key: '{current_key}' = {value}")
                             return value
                         
                         # Recursively search in nested structures
@@ -2067,7 +2059,6 @@ class DocumentAgent:
                 return None
                 
             except Exception as e:
-                print(f"Error in _find_encompass_guid: {e}")
                 return None
 
         def pull_doc(self, api_base: str, token: str, client_id: str, doc_id: str):
@@ -2154,154 +2145,121 @@ class DocumentAgent:
                     "error": f"Unexpected error: {str(e)}"
                 }
 
-        def push_doc(self, client_id: str, doc_id: str, token: str, api_base: str, submission_type: str = "Initial Submission", auto_lock: bool = False, taskdoc_api_token: str = None, taskdoc_auth_token: str = None):
+        def push_doc(self, 
+                    client_id: str, 
+                    doc_id: str, 
+                    token: str, 
+                    api_base: str, 
+                    submission_type: str = "Initial Submission", 
+                    auto_lock: bool = False, 
+                    taskdoc_api_token: str = None, 
+                    taskdoc_auth_token: str = None,
+                    # Direct submission parameters (bypass DocRepo/TaskDoc extraction)
+                    direct_loan_id: str = None,
+                    direct_document_ids: list = None,
+                    direct_base_url: str = None,
+                    direct_api_token: str = None):
             """
-            Creates a new loan submission and associates documents with it. Supports auto-locking based
-            on account configuration. Now includes DocRepo integration to extract taskId and other fields
-            at the beginning of the process.
+            Creates a new loan submission and associates documents with it. 
+            
+            Two modes of operation:
+            1. FULL WORKFLOW: Extract data from DocRepo -> get_task -> create submission
+            2. DIRECT MODE: Skip extraction and create submission directly with provided parameters
             
             Args:
-                loan_id (int): Identifier of the loan to attach the submission to
-                document_ids (list): IDs of documents to include in the submission
-                base_url (str): The base URL for the ESFuse API
-                access_token (str): The API access token
+                client_id (str): DocRepo client ID
+                doc_id (str): DocRepo document ID  
+                token (str): DocRepo authentication token
+                api_base (str): DocRepo API base URL
                 submission_type (str, optional): Type of submission (default: "Initial Submission")
-                auto_lock (bool, optional): Locks the submission automatically after creation (default: True)
-                client_id (str, optional): DocRepo client ID (default: "137")
-                doc_id (str, optional): DocRepo document ID (default: "935") 
-                token (str, optional): DocRepo authentication token (default: "esfuse-token")
-                api_base (str, optional): DocRepo API base URL
+                auto_lock (bool, optional): Locks the submission automatically after creation (default: False)
                 taskdoc_api_token (str, optional): TASKDOC API token for get_task call
                 taskdoc_auth_token (str, optional): TASKDOC authentication token for get_task call
                 
+                # DIRECT MODE PARAMETERS (bypass extraction workflow)
+                direct_loan_id (str, optional): Loan ID for direct submission
+                direct_document_ids (list, optional): List of document IDs for direct submission
+                direct_base_url (str, optional): Base URL for direct submission API
+                direct_api_token (str, optional): API token for direct submission
+                
             Returns:
-                dict: Success status, extracted DocRepo fields (including taskId), and API response results
+                dict: Success status, extracted/provided data, and API response results
             """
             try:
-                # STEP 1: Extract DocRepo data first (including taskId)
-                print("🔍 Extracting DocRepo data...")
-                docrepo_url = f"{api_base}/doc?clientId={client_id}&docId={doc_id}"
-                docrepo_headers = {
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type": "application/json"
-                }
-                
-                try:
-                    docrepo_response = requests.get(docrepo_url, headers=docrepo_headers, timeout=30)
-                    if docrepo_response.status_code == 200:
-                        docrepo_data = docrepo_response.json()
-                        
-                        # Extract key fields from DocRepo response
-                        extracted_fields = {
-                            "taskId": docrepo_data.get("taskId"),
-                            "hasTaskId": docrepo_data.get("hasTaskId"),
-                            "loanId": docrepo_data.get("loanId"),
-                            "hasLoanId": docrepo_data.get("hasLoanId"),
-                            "clientId": docrepo_data.get("clientId"),
-                            "docId": docrepo_data.get("docId"),
-                            "hasDataObject": docrepo_data.get("hasDataObject"),
-                            "url": docrepo_data.get("url")
-                        }
-                        
-                        # Extract additional fields from dataObject if available
-                        if "dataObject" in docrepo_data and docrepo_data["dataObject"]:
-                            data_obj = docrepo_data["dataObject"]
-                            extracted_fields.update({
-                                "extracted_at": data_obj.get("extracted_at"),
-                                "extraction_method": data_obj.get("extraction_method"),
-                                "source": data_obj.get("source"),
-                                "document_id": data_obj.get("document_id")
-                            })
+                # Check if direct mode parameters are provided
+                if (direct_loan_id and direct_document_ids and direct_base_url and direct_api_token):
+                    extracted_fields = {
+                        "mode": "direct",
+                        "taskdoc_loan_id": direct_loan_id,
+                        "taskdoc_document_ids": direct_document_ids,
+                        "taskdoc_root_url": direct_base_url,
+                        "taskdoc_api_token": direct_api_token
+                    }
+                else:
+                    # STEP 1: Extract DocRepo data first (including taskId)
+                    docrepo_url = f"{api_base}/doc?clientId={client_id}&docId={doc_id}"
+                    docrepo_headers = {
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json"
+                    }
+                    
+                    try:
+                        docrepo_response = requests.get(docrepo_url, headers=docrepo_headers, timeout=30)
+                        if docrepo_response.status_code == 200:
+                            docrepo_data = docrepo_response.json()
                             
-                            # Extract fields from nested fields object
-                            if "fields" in data_obj and data_obj["fields"]:
-                                fields_obj = data_obj["fields"]
-                                extracted_fields.update({
-                                    "reportIssued": fields_obj.get("reportIssued"),
-                                    "hireDate": fields_obj.get("hireDate"),
-                                    "payStubPeriodFrom": fields_obj.get("payStubPeriodFrom"),
-                                    "payStubPeriodTo": fields_obj.get("payStubPeriodTo"),
-                                    "YTD": fields_obj.get("YTD"),
-                                    "current": fields_obj.get("current"),
-                                    "hourlyRate": fields_obj.get("hourlyRate"),
-                                    "hoursWorked": fields_obj.get("hoursWorked"),
-                                    "hoursPerWeek": fields_obj.get("hoursPerWeek"),
-                                    "confidence": fields_obj.get("confidence"),
-                                    "tier": fields_obj.get("tier"),
-                                    "category": fields_obj.get("category"),
-                                    "address": fields_obj.get("address"),
-                                    "employerAddress": fields_obj.get("employerAddress"),
-                                    "employee": fields_obj.get("employee"),
-                                    "employer": fields_obj.get("employer"),
-                                    "variableIncomes": fields_obj.get("variableIncomes"),
-                                    "exceptions": fields_obj.get("exceptions")
-                                })
-                        
-                        print(f"✅ DocRepo data extracted successfully. TaskId: {extracted_fields.get('taskId')}")
-                        
-                        # STEP 2: Call get_task if taskId exists and tokens are provided
-                        task_id = extracted_fields.get('taskId')
-                        if task_id and taskdoc_api_token and taskdoc_auth_token:
-                            print(f"📋 Getting task details for TaskId: {task_id}")
-                            task_details = self.agent.get_task(task_id, taskdoc_api_token, taskdoc_auth_token)
-                            extracted_fields['task_details'] = task_details
+                            # Extract only essential fields for push_doc workflow
+                            extracted_fields = {
+                                "mode": "full_workflow",
+                                "taskId": docrepo_data.get("taskId"),
+                                "loanId": docrepo_data.get("loanId"),
+                                "clientId": docrepo_data.get("clientId"),
+                                "docId": docrepo_data.get("docId")
+                            }
                             
-                            # Extract specific fields from TaskDoc response if successful
-                            if task_details.get('status') == 200 and task_details.get('response'):
-                                task_response = task_details.get('response', {})
+                            # STEP 2: Call get_task if taskId exists and tokens are provided
+                            task_id = extracted_fields.get('taskId')
+                            if task_id and taskdoc_api_token and taskdoc_auth_token:
+                                task_details = self.agent.get_task(task_id, taskdoc_api_token, taskdoc_auth_token)
+                                extracted_fields['task_details'] = task_details
                                 
-                                # Extract document IDs from parameters.created_result_document_ids
-                                parameters = task_response.get('parameters', {})
-                                document_ids = parameters.get('created_result_document_ids', [])
-                                extracted_fields['taskdoc_document_ids'] = document_ids
-                                
-                                # Extract loan ID from parameters.loan_id
-                                taskdoc_loan_id = parameters.get('loan_id')
-                                extracted_fields['taskdoc_loan_id'] = taskdoc_loan_id
-                                
-                                # Extract API token from app.default_request_data.api_token
-                                app = task_response.get('app', {})
-                                default_request_data = app.get('default_request_data', {})
-                                taskdoc_api_token_extracted = default_request_data.get('api_token')
-                                extracted_fields['taskdoc_api_token'] = taskdoc_api_token_extracted
-                                
-                                # Extract root URL from app.tool_parameters.root_url
-                                tool_parameters = app.get('tool_parameters', {})
-                                taskdoc_root_url = tool_parameters.get('root_url')
-                                extracted_fields['taskdoc_root_url'] = taskdoc_root_url
-                                
-                                # Extract workflow state
-                                workflow_state = task_response.get('workflow_state')
-                                extracted_fields['taskdoc_workflow_state'] = workflow_state
-                                
-                                # Extract assignee info
-                                assignee = task_response.get('assignee', {})
-                                if assignee:
-                                    extracted_fields['taskdoc_assignee'] = {
-                                        'username': assignee.get('username'),
-                                        'first_name': assignee.get('first_name'),
-                                        'last_name': assignee.get('last_name')
-                                    }
-                                
-                                print(f"✅ Task details and specific fields extracted successfully")
-                                print(f"   Document IDs: {len(document_ids)} documents")
-                                print(f"   Loan ID: {taskdoc_loan_id}")
-                                print(f"   Root URL: {taskdoc_root_url}")
+                                # Extract only required fields from TaskDoc response
+                                if task_details.get('status') == 200 and task_details.get('response'):
+                                    task_response = task_details.get('response', {})
+                                    
+                                    # Extract document IDs from parameters.created_result_document_ids
+                                    parameters = task_response.get('parameters', {})
+                                    document_ids = parameters.get('created_result_document_ids', [])
+                                    extracted_fields['taskdoc_document_ids'] = document_ids
+                                    
+                                    # Extract loan ID from parameters.loan_id
+                                    taskdoc_loan_id = parameters.get('loan_id')
+                                    extracted_fields['taskdoc_loan_id'] = taskdoc_loan_id
+                                    
+                                    # Extract API token from app.default_request_data.api_token
+                                    app = task_response.get('app', {})
+                                    default_request_data = app.get('default_request_data', {})
+                                    taskdoc_api_token_extracted = default_request_data.get('api_token')
+                                    extracted_fields['taskdoc_api_token'] = taskdoc_api_token_extracted
+                                    
+                                    # Extract root URL from app.tool_parameters.root_url
+                                    tool_parameters = app.get('tool_parameters', {})
+                                    taskdoc_root_url = tool_parameters.get('root_url')
+                                    extracted_fields['taskdoc_root_url'] = taskdoc_root_url
+                                    
+                                else:
+                                    pass
+                                    
+                            elif task_id and (not taskdoc_api_token or not taskdoc_auth_token):
+                                pass
                             else:
-                                print(f"⚠️ TaskDoc call failed or returned no data")
-                                
-                        elif task_id and (not taskdoc_api_token or not taskdoc_auth_token):
-                            print(f"⚠️ TaskId found but TASKDOC tokens not provided - skipping get_task call")
+                                pass
+                            
                         else:
-                            print(f"⚠️ No TaskId found - skipping get_task call")
-                        
-                    else:
-                        print(f"⚠️ DocRepo API failed with status {docrepo_response.status_code}")
-                        extracted_fields = {"docrepo_error": f"API failed with status {docrepo_response.status_code}"}
-                        
-                except Exception as docrepo_error:
-                    print(f"⚠️ DocRepo extraction failed: {str(docrepo_error)}")
-                    extracted_fields = {"docrepo_error": str(docrepo_error)}
+                            extracted_fields = {"docrepo_error": f"API failed with status {docrepo_response.status_code}"}
+                            
+                    except Exception as docrepo_error:
+                        extracted_fields = {"docrepo_error": str(docrepo_error)}
                 
                 # STEP 3: Push documents to submission endpoint using extracted data
                 if 'taskdoc_loan_id' in extracted_fields and 'taskdoc_root_url' in extracted_fields and 'taskdoc_api_token' in extracted_fields and 'taskdoc_document_ids' in extracted_fields:
@@ -2311,9 +2269,6 @@ class DocumentAgent:
                     document_ids = extracted_fields['taskdoc_document_ids']
                     
                     if loan_id and base_url and api_token and document_ids:
-                        print(f"📤 Creating submission for Loan ID: {loan_id}")
-                        print(f"   Using {len(document_ids)} documents")
-                        
                         # Construct the submission endpoint URL (handle trailing slashes)
                         base_url_clean = base_url.rstrip('/')
                         submission_url = f"{base_url_clean}/api/v5/loans/{loan_id}/submissions?token={api_token}"
@@ -2341,16 +2296,6 @@ class DocumentAgent:
                             
                             if submission_response.status_code in [200, 201]:
                                 submission_data = submission_response.json() if submission_response.content else {}
-                                print(f"✅ Submission created successfully!")
-                                print(f"   Status Code: {submission_response.status_code}")
-                                
-                                # Show submission details from response
-                                if submission_data:
-                                    submission_details = submission_data.get('details', {}).get('submission', {})
-                                    if submission_details:
-                                        print(f"   Submission ID: {submission_details.get('id')}")
-                                        print(f"   Submission Name: {submission_details.get('name')}")
-                                        print(f"   Locked: {submission_details.get('locked')}")
                                 
                                 # Add submission results to extracted fields (include entire response)
                                 extracted_fields['submission_result'] = {
@@ -2363,23 +2308,11 @@ class DocumentAgent:
                                 }
                                 
                             else:
-                                print(f"⚠️ Submission failed with status {submission_response.status_code}")
-                                
-                                # Print detailed error information
-                                print(f"📋 DETAILED ERROR INFORMATION:")
-                                print(f"   Status Code: {submission_response.status_code}")
-                                print(f"   Submission URL: {submission_url}")
-                                print(f"   Request Headers: {submission_headers}")
-                                print(f"   Request Body: {json.dumps(submission_body, indent=2)}")
-                                print(f"   Response Headers: {dict(submission_response.headers)}")
-                                print(f"   Response Text: {submission_response.text}")
-                                
                                 # Try to parse response as JSON for better error details
                                 try:
                                     error_json = submission_response.json()
-                                    print(f"   Response JSON: {json.dumps(error_json, indent=2)}")
                                 except:
-                                    print("   Response is not valid JSON")
+                                    error_json = None
                                 
                                 extracted_fields['submission_result'] = {
                                     "success": False,
@@ -2392,7 +2325,6 @@ class DocumentAgent:
                                 }
                                 
                         except Exception as submission_error:
-                            print(f"⚠️ Submission request failed: {str(submission_error)}")
                             extracted_fields['submission_result'] = {
                                 "success": False,
                                 "error": f"Submission request error: {str(submission_error)}",
@@ -2400,13 +2332,11 @@ class DocumentAgent:
                                 "submission_body": submission_body
                             }
                     else:
-                        print(f"⚠️ Missing required data for submission: loan_id={loan_id}, base_url={base_url}, api_token={'***' if api_token else None}, document_count={len(document_ids) if document_ids else 0}")
                         extracted_fields['submission_result'] = {
                             "success": False,
                             "error": "Missing required extracted data for submission"
                         }
                 else:
-                    print(f"⚠️ TaskDoc extraction incomplete - skipping submission")
                     extracted_fields['submission_result'] = {
                         "success": False,
                         "error": "TaskDoc data extraction incomplete - cannot create submission"
