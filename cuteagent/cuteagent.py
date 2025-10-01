@@ -1465,6 +1465,7 @@ class StationAgent:
 				"station_thread": self.station_thread_id  # Include station_thread for server-side cleanup
 			}
 			
+			
 			# Make API call to unpause endpoint
 			unpause_url = f"{self.base_url}/shared-state/unpause"
 			headers = {
