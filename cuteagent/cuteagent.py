@@ -1412,6 +1412,10 @@ class StationAgent:
 		"""
 		Unpause a previously paused StationAgent by calling the LangGraph Thread Unpause API.
 		
+		This method sends the pause_tag and station_thread_id to the API for server-side cleanup
+		of pause tag variables, providing redundancy in case client-side cleanup fails due to
+		timeouts or other issues. This prevents "pause tag already in use" errors.
+		
 		Args:
 			pause_tag (str): The pause tag identifier
 			resume_payload (str, optional): Payload to send to resume thread. Defaults to "nextstep: Proceed"
@@ -1456,7 +1460,9 @@ class StationAgent:
 				"assistant_id": graph_assistant_id,
 				"langgraph_url": graph_url,
 				"api_key": api_key,
-				"resume_payload": resume_payload
+				"resume_payload": resume_payload,
+				"pause_tag": pause_tag,  # Include pause_tag for server-side cleanup
+				"station_thread": self.station_thread_id  # Include station_thread for server-side cleanup
 			}
 			
 			# Make API call to unpause endpoint

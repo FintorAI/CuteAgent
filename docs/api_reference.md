@@ -673,26 +673,36 @@ if result["status"] == "paused":
     print(f"Paused: {result['reason']}")
 ```
 
-### `agent.unpause()`
+### `agent.unpause(pause_tag, resume_payload="nextstep: Proceed")`
 
-Unpause the agent's execution by removing pause information from shared state.
+Unpause a previously paused StationAgent by calling the LangGraph Thread Unpause API.
+
+This method sends the pause_tag and station_thread_id to the API for server-side cleanup of pause tag variables, providing redundancy in case client-side cleanup fails due to timeouts or other issues. This prevents "pause tag already in use" errors.
 
 **Parameters:**
-- None
+- `pause_tag` (str): The pause tag identifier used when pausing
+- `resume_payload` (str, optional): Payload to send to resume thread. Defaults to "nextstep: Proceed"
 
 **Returns:**
 - Dict with unpause status:
-  - Success: `{"status": "unpaused", "unpausedAt": timestamp}`
-  - Already active: `{"status": "already_active", "message": "Agent is not paused"}`
-  - Error: `{"status": "error", "error": "error_message"}`
+  - Success: `{"success": True, "status": "unPaused", "pause_tag": "tag", "thread_id": "...", "message": "..."}`
+  - Tag not paused: `{"success": False, "status": "tagNotPaused", "error": "Pause tag 'tag' is not in paused state"}`
+  - Missing variables: `{"success": False, "error": "Missing waitpoint variables: ..."}`
+  - API error: `{"success": False, "error": "Network error calling unpause API: ..."}`
 
 **Example:**
 ```python
-result = agent.unpause()
-if result["status"] == "unpaused":
-    print("Agent resumed execution")
-elif result["status"] == "already_active":
-    print("Agent was not paused")
+# Unpause with default payload
+result = agent.unpause("user_input_pause")
+if result["success"]:
+    print(f"Successfully unpaused: {result['message']}")
+else:
+    print(f"Unpause failed: {result['error']}")
+
+# Unpause with custom payload
+result = agent.unpause("decision_pause", "user_selected_option_A")
+if result["success"]:
+    print("Agent resumed with user decision")
 ```
 
 ### `agent.is_paused()`

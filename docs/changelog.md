@@ -17,6 +17,13 @@
 -   **API Reference**: Added complete Pause/Unpause Management API section with examples
 -   **Error Handling**: Enhanced pause/unpause error handling with structured responses
 
+**Bug Fixes**:
+
+-   **StationAgent.unpause()**: Fixed unpause method to include pause_tag and station_thread in API request for server-side cleanup
+    - Prevents "pause tag already in use" errors by enabling server-side cleanup of pause tag variables
+    - Provides redundancy in case client-side cleanup fails due to timeouts or network issues
+    - Updated API payload to include pause_tag and station_thread_id fields
+
 **Removed Features**:
 
 -   **uninterrupt functionality**: Removed deprecated uninterrupt references in favor of pause/unpause
