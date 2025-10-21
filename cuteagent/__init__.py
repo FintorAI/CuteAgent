@@ -2,7 +2,7 @@
 
 __author__ = """Masoud Jb"""
 __email__ = "eng@fintor.com"
-__version__ = "0.2.24"
+__version__ = "0.2.25"
 
 from .cuteagent import WindowsAgent, VisionAgent, HumanAgent, StationAgent, DocumentAgent
 

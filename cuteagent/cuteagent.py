@@ -1495,15 +1495,24 @@ class StationAgent:
 			self.state.set(waitpoint_var, "unPaused")
 			
 			# Optional: Clean up waitpoint variables after successful unpause
+			# Note: Server-side cleanup may have already removed these, so check existence first
 			try:
-				# Clean up the main waitpoint variables
-				self.state.delete(waitpoint_url_var)
-				self.state.delete(waitpoint_assistant_var)
-				self.state.delete(waitpoint_thread_var)
-				self.state.delete(waitpoint_apikey_var)
+				# Clean up the main waitpoint variables (with existence checks)
+				cleanup_vars = [
+					(waitpoint_url_var, "URL"),
+					(waitpoint_assistant_var, "Assistant"),
+					(waitpoint_thread_var, "Thread ID"),
+					(waitpoint_apikey_var, "API Key"),
+					(f"{pause_tag}-waitpoint-timestamp", "Timestamp")
+				]
 				
-				# Clean up the timestamp variable created by pause
-				self.state.delete(f"{pause_tag}-waitpoint-timestamp")
+				for var_name, var_label in cleanup_vars:
+					if self.state.exists(var_name):
+						self.state.delete(var_name)
+						print(f"  ✓ Cleaned up {var_label} variable: {var_name}")
+					else:
+						print(f"  ℹ {var_label} variable already cleaned (likely by server): {var_name}")
+						
 			except Exception as cleanup_error:
 				print(f"Warning: Could not clean up waitpoint variables: {cleanup_error}")
 			
