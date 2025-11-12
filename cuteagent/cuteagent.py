@@ -489,7 +489,7 @@ Please analyze the screenshot and locate the element described above.
 			print("🤖 Sending screenshot to Claude for coordinate grounding...")
 			client = anthropic.Anthropic(api_key=key)
 			response = client.messages.create(
-				model="claude-3-5-sonnet-20241022",
+				model="claude-sonnet-4-5-20250929",
 				max_tokens=1500,
 				messages=[
 					{
