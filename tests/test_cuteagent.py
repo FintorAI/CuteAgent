@@ -7,7 +7,10 @@ import unittest
 from io import StringIO
 import sys
 import logging
+import tempfile
+from unittest.mock import patch
 from cuteagent import WindowsAgent, VisionAgent, HumanAgent
+from cuteagent.cuteagent import _normalize_screenshot_result
 from gradio_client import Client
 import os
 import time
@@ -92,6 +95,64 @@ class TestWindowsAgent(unittest.TestCase):
         self.assertEqual(result, 8)
         result_negative = agent.add(-5, 3)
         self.assertEqual(result_negative, -2)
+
+
+class TestNormalizeScreenshotResult(unittest.TestCase):
+    """Unit tests for `_normalize_screenshot_result` — no network required.
+
+    Covers the server-side migration away from uploading screenshots to a
+    shared S3 bucket (collision/public-exposure bug) toward a Gradio
+    File/Image output, which makes gradio_client download to a unique local
+    temp path instead. `_normalize_screenshot_result` keeps the return value
+    of `screenshot()` a consistent "opaque URL" string across both backends.
+    """
+
+    def test_http_url_passthrough(self):
+        """Today's S3-backed server: an http(s) URL is returned unchanged."""
+        url = "https://datacollectionfintor.s3.amazonaws.com/screenshot_20250517_180131.png"
+        self.assertEqual(_normalize_screenshot_result(url), url)
+
+    def test_file_uri_passthrough(self):
+        """Already-prefixed file:// URIs (e.g. from a DCV-style backend) pass through."""
+        uri = "file:///tmp/dcv_shots/abc123.png"
+        self.assertEqual(_normalize_screenshot_result(uri), uri)
+
+    def test_local_path_wrapped_in_file_uri(self):
+        """A bare local path (gradio_client's download of a File/Image output)
+        gets wrapped in file:// so callers keep a single, consistent 'URL' shape."""
+        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
+            result = _normalize_screenshot_result(tmp.name)
+            self.assertEqual(result, f"file://{tmp.name}")
+
+    def test_nonexistent_path_passthrough(self):
+        """A string that isn't an existing local file (and isn't a URL) is
+        left alone rather than guessed at."""
+        value = "not-a-real-path-or-url"
+        self.assertEqual(_normalize_screenshot_result(value), value)
+
+    def test_non_string_passthrough(self):
+        """Dicts, None, etc. are passed through untouched."""
+        self.assertIsNone(_normalize_screenshot_result(None))
+        payload = {"url": "https://example.com/x.png"}
+        self.assertEqual(_normalize_screenshot_result(payload), payload)
+
+    @patch("cuteagent.cuteagent.Client")
+    def test_screenshot_normalizes_local_path(self, mock_client_cls):
+        """screenshot() applies normalization to whatever predict() returns."""
+        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
+            mock_client_cls.return_value.predict.return_value = tmp.name
+            agent = WindowsAgent(os_url="https://fake-desk.ngrok.app")
+            result = agent.screenshot()
+            self.assertEqual(result, f"file://{tmp.name}")
+
+    @patch("cuteagent.cuteagent.Client")
+    def test_screenshot_returns_none_on_error(self, mock_client_cls):
+        """The historical NameError-on-exception bug (returning an undefined
+        `result`) is fixed: a failed call returns None instead of raising."""
+        mock_client_cls.side_effect = Exception("connection refused")
+        agent = WindowsAgent(os_url="https://fake-desk.ngrok.app")
+        result = agent.screenshot()
+        self.assertIsNone(result)
 
 
 if __name__ == '__main__':

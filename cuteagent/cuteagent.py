@@ -29,6 +29,34 @@ SHARED_STATE_URL = "https://c16bgaz0i2.execute-api.us-west-1.amazonaws.com/prod"
 
 HITL_TOKEN = os.environ.get("HITL_TOKEN")
 
+
+def _normalize_screenshot_result(result):
+	"""Normalize a gradio_client `predict()` result for a screenshot endpoint
+	into a single, consistent "opaque URL" string.
+
+	Historically `/get_screenshot_url` (and `/get_cropped_screenshot`) upload
+	to a shared S3 bucket server-side and return an `http(s)://` URL, which
+	is returned here unchanged. If the server-side endpoint instead returns
+	a Gradio `File`/`Image` output, gradio_client downloads it to a unique
+	local temp path and `predict()` returns that bare filesystem path as a
+	string (no shared storage, no collision risk) — this wraps that case in
+	a `file://` URI so every downstream caller (this library's own
+	`find_element`, and consumers like LG-BlendExtractionCUA's
+	`_download_image_bytes`) can keep treating the return value as "a URL to
+	fetch" regardless of which backend produced it.
+
+	Anything else (dicts, None, already-prefixed strings) is passed through
+	unchanged.
+	"""
+	if isinstance(result, str) and not result.startswith(("http://", "https://", "file://")):
+		try:
+			if os.path.isfile(result):
+				return f"file://{result}"
+		except (TypeError, ValueError):
+			pass
+	return result
+
+
 class WindowsAgent:
 	def __init__(self, variable_name="friend", os_url=OS_URL, cache_token=None):
 		"""
@@ -105,11 +133,12 @@ class WindowsAgent:
 			result = client.predict(
 				api_name="/get_screenshot_url"
 			)
+			result = _normalize_screenshot_result(result)
 			print(result)
 			return result
 		except Exception as e:
 			print(f"Error in act operation: {e}")
-			return result
+			return None
 		
 
 	def screenshot_cropped(self, arr_input):
@@ -119,11 +148,12 @@ class WindowsAgent:
 				array_input=arr_input,
 				api_name="/get_cropped_screenshot"
 			)
+			result = _normalize_screenshot_result(result)
 			print(result)
 			return result
 		except Exception as e:
 			print(f"Error in act operation: {e}")
-			return result
+			return None
 
 
 	def click_cached_element(self, task_type: str, element_name: str):
